@@ -1,76 +1,78 @@
 import React, { Component } from 'react';
 import Video from 'react-native-video';
 import {
-    View
+    View,
+    Easing,
+    Animated,
 } from 'react-native'
 
-export default class VideoPlayer extends Component {
+const {Provider,Consumer} = React.createContext({});
 
-    static defaultProps = {
-        toggleResizeModeOnFullscreen:   true,
-        playInBackground:               false,
-        playWhenInactive:               false,
-        showOnStart:                    true,
-        resizeMode:                     'contain',
-        paused:                         false,
-        repeat:                         false,
-        volume:                         0,
-        muted:                          false,
-        title:                          '',
-        rate:                           1,
-    };
+export default class VideoPlayer extends Component {
 
     constructor(props){
         super(props);
         this.state={
-            resizeMode: this.props.resizeMode,
-            paused: this.props.paused,
-            muted: this.props.muted,
-            volume: this.props.volume,
-            rate: this.props.rate,
-        };
-
-        this.events = {
-            onError: this.props.onError || this._onError.bind( this ),
-            onBack: this.props.onBack || this._onBack.bind( this ),
-            onEnd: this.props.onEnd || this._onEnd.bind( this ),
-            onScreenTouch: this._onScreenTouch.bind( this ),
-            onEnterFullscreen: this.props.onEnterFullscreen,
-            onExitFullscreen: this.props.onExitFullscreen,
-            onLoadStart: this._onLoadStart.bind( this ),
-            onProgress: this._onProgress.bind( this ),
-            onLoad: this._onLoad.bind( this ),
-            onPause: this.props.onPause,
-            onPlay: this.props.onPlay,
+            visible:false,
         };
     }
+
+    showMenus=()=>{
+        this.setState({visible:true})
+    };
 
 
 
     render(){
         return (
-            <View>
-                <Video
-                    { ...this.props }
-                    ref={ videoPlayer => this.player.ref = videoPlayer }
+            <Provider value={{visible:false}}>
+                <View style={{flex:1}}
+                      onStartShouldSetResponder={this.showMenus}
+                >
+                    {/******* top menus *******/}
+                    <TopMenus />
+                    {/******* right menus *******/}
+                    <RightMenus />
+                    {/******* progress line *******/}
+                    <ProgressLine />
+                    {/******* bottom menus *******/}
+                    <BottomMenus />
+                </View>
+            </Provider>
+        )
+    }
+}
 
-                    resizeMode={ this.state.resizeMode }
-                    volume={ this.state.volume }
-                    paused={ this.state.paused }
-                    muted={ this.state.muted }
-                    rate={ this.state.rate }
+class TopMenus extends React.Component {
+    constructor(props){
+        super(props);
+        this.animatedValue = new Animated.Value(0)
+    }
 
-                    onLoadStart={ this.events.onLoadStart }
-                    onProgress={ this.events.onProgress }
-                    onError={ this.events.onError }
-                    onLoad={ this.events.onLoad }
-                    onEnd={ this.events.onEnd }
+    componentWillReceiveProps(nextProps, nextContext) {
+        this.slideToDown()
+    }
 
-                    style={[this.props.style]}
+    slideToDown=()=>{
+        Animated.timing(
+            this.animatedValue,
+            {
+                toValue: 1,
+                duration: 300,
+                easing: Easing.linear
+            }
+        ).start()
+    };
 
-                    source={ this.props.source }
-                />
-            </View>
+    render(){
+        return (
+            <Consumer>
+                {({visible})=>
+                    <Animated.View style={{flex:1,height:40}}>
+
+                    </Animated.View>
+                }
+            </Consumer>
         )
     }
 }
