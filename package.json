@@ -1,0 +1,27 @@
+{
+  "name": "react-native-bilibili-video-player",
+  "version": "1.0.0",
+  "description": "react-native-video二次开发视频播放器，UI模仿bilibili",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/1uokun/react-native-bilibili-video-player.git"
+  },
+  "keywords": [
+    "react-native-video",
+    "bilibili"
+  ],
+  "author": "1498710037@qq.com",
+  "license": "ISC",
+  "dependencies": {
+    "react-native-video": "latest",
+    "react-native-orientation": "latest"
+  },
+  "bugs": {
+    "url": "https://github.com/1uokun/react-native-bilibili-video-player/issues"
+  },
+  "homepage": "https://github.com/1uokun/react-native-bilibili-video-player#readme"
+}
