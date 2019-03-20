@@ -2,77 +2,127 @@ import React, { Component } from 'react';
 import Video from 'react-native-video';
 import {
     View,
-    Easing,
     Animated,
+    Dimensions,
+    StyleSheet,
+    Image,
+    TouchableWithoutFeedback
 } from 'react-native'
+import AinmateComponent from './lib/animate'
 
-const {Provider,Consumer} = React.createContext({});
+const MenusContext = React.createContext({});
 
+let timer;
 export default class VideoPlayer extends Component {
 
     constructor(props){
         super(props);
         this.state={
-            visible:false,
+            visible:true,
+            orientation:'PORTRAIT'
         };
     }
 
-    showMenus=()=>{
-        this.setState({visible:true})
+    componentDidMount() {
+        {/******* listen orientation *******/}
+        Dimensions.addEventListener('change',(e)=>{
+            const {width,height} = e.window;
+            if(width>height){
+                this.setState({orientation:'LANDSCAPE'})
+            }else {
+                this.setState({orientation:'PORTRAIT'})
+            }
+        });
+
+    }
+
+    toggleMenus=async ()=>{
+        let visible = this.state.visible;
+        await this.setState({visible:!visible});
+        if(this.state.visible){
+            timer = setTimeout(()=>{
+                this.setState({visible:false})
+            },2000);
+        }else {
+            clearTimeout(timer)
+        }
     };
 
 
 
     render(){
         return (
-            <Provider value={{visible:false}}>
-                <View style={{flex:1}}
-                      onStartShouldSetResponder={this.showMenus}
+            <MenusContext.Provider value={this.state}>
+                <View style={[styles[this.state.orientation],styles.container]}
+                      onStartShouldSetResponder={this.toggleMenus}
                 >
                     {/******* top menus *******/}
-                    <TopMenus />
-                    {/******* right menus *******/}
-                    <RightMenus />
-                    {/******* progress line *******/}
-                    <ProgressLine />
+                    <TopMenus/>
+
                     {/******* bottom menus *******/}
                     <BottomMenus />
                 </View>
-            </Provider>
+            </MenusContext.Provider>
         )
     }
 }
 
-class TopMenus extends React.Component {
+class TopMenus extends AinmateComponent {
     constructor(props){
         super(props);
-        this.animatedValue = new Animated.Value(0)
     }
-
-    componentWillReceiveProps(nextProps, nextContext) {
-        this.slideToDown()
-    }
-
-    slideToDown=()=>{
-        Animated.timing(
-            this.animatedValue,
-            {
-                toValue: 1,
-                duration: 300,
-                easing: Easing.linear
-            }
-        ).start()
-    };
 
     render(){
         return (
-            <Consumer>
+            <MenusContext.Consumer>
                 {({visible})=>
-                    <Animated.View style={{flex:1,height:40}}>
-
+                    <Animated.View style={[visible?this.translateDown:this.translateUp,visible?this.Appear:this.Disappear,{flexDirection: 'row',justifyContent: 'space-between'}]}>
+                        <TouchableWithoutFeedback>
+                            <Image source={require('./assets/icon.png')} />
+                        </TouchableWithoutFeedback>
+                        <TouchableWithoutFeedback>
+                            <Image source={require('./assets/icon.png')} />
+                        </TouchableWithoutFeedback>
                     </Animated.View>
                 }
-            </Consumer>
+            </MenusContext.Consumer>
         )
     }
 }
+class BottomMenus extends AinmateComponent {
+    render(){
+        return (
+            <MenusContext.Consumer>
+                {({visible})=>
+                    <Animated.View style={[visible?this.translateUp:this.translateDown,visible?this.Appear:this.Disappear,{flexDirection: 'row',justifyContent: 'space-between'}]}>
+                        <TouchableWithoutFeedback>
+                            <Image source={require('./assets/icon.png')} />
+                        </TouchableWithoutFeedback>
+                        <TouchableWithoutFeedback>
+                            <Image source={require('./assets/icon.png')} />
+                        </TouchableWithoutFeedback>
+                    </Animated.View>
+                }
+            </MenusContext.Consumer>
+        )
+    }
+}
+
+TopMenus.contextType = MenusContext;
+BottomMenus.contextType = MenusContext;
+
+const styles = StyleSheet.create({
+    container:{
+        backgroundColor: '#000000',
+        justifyContent:'space-between'
+    },
+    PORTRAIT:{
+        width:'100%',
+        height:'30%',
+        minHeight: 220,
+    },
+    LANDSCAPE:{
+        width:'100%',
+        height:'100%',
+    }
+});
