@@ -9,6 +9,7 @@ import {
     TouchableWithoutFeedback
 } from 'react-native'
 import AinmateComponent from './lib/animate'
+import TouchComponent from './lib/touch'
 
 const MenusContext = React.createContext({});
 
@@ -39,13 +40,21 @@ export default class VideoPlayer extends Component {
     toggleMenus=async ()=>{
         let visible = this.state.visible;
         await this.setState({visible:!visible});
-        if(this.state.visible){
-            timer = setTimeout(()=>{
-                this.setState({visible:false})
-            },2000);
-        }else {
-            clearTimeout(timer)
-        }
+        // if(this.state.visible){
+        //     timer = setTimeout(()=>{
+        //         this.setState({visible:false})
+        //     },2000);
+        // }else {
+        //     clearTimeout(timer)
+        // }
+    };
+
+    onResponderMove=(event)=>{
+        console.log('滑动不放手',event)
+    };
+
+    onResponderRelease=(event)=>{
+        console.log('触摸操作结束时触发',event)
     };
 
 
@@ -53,15 +62,16 @@ export default class VideoPlayer extends Component {
     render(){
         return (
             <MenusContext.Provider value={this.state}>
-                <View style={[styles[this.state.orientation],styles.container]}
+                <TouchComponent style={[styles[this.state.orientation],styles.container]}
                       onStartShouldSetResponder={this.toggleMenus}
+                      // onResponderMove={this.onResponderMove}
                 >
                     {/******* top menus *******/}
                     <TopMenus/>
 
                     {/******* bottom menus *******/}
                     <BottomMenus />
-                </View>
+                </TouchComponent>
             </MenusContext.Provider>
         )
     }
@@ -76,7 +86,7 @@ class TopMenus extends AinmateComponent {
         return (
             <MenusContext.Consumer>
                 {({visible})=>
-                    <Animated.View style={[visible?this.translateDown:this.translateUp,visible?this.Appear:this.Disappear,{flexDirection: 'row',justifyContent: 'space-between'}]}>
+                    <Animated.View style={[visible?this.translateDown:this.translateUp,visible?this.Appear:this.Disappear,{flexDirection: 'row',justifyContent: 'space-between',backgroundColor: 'red'}]}>
                         <TouchableWithoutFeedback>
                             <Image source={require('./assets/icon.png')} />
                         </TouchableWithoutFeedback>
