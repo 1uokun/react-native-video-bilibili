@@ -6,7 +6,7 @@ import {
     Dimensions,
     StyleSheet,
     Image,
-    TouchableWithoutFeedback
+    TouchableWithoutFeedback, Easing
 } from 'react-native'
 import AinmateComponent from './lib/animate'
 import TouchComponent from './lib/touch'
@@ -18,9 +18,11 @@ export default class VideoPlayer extends Component {
 
     constructor(props){
         super(props);
+        this.animatedValue = new Animated.Value(0);
         this.state={
             visible:true,
-            orientation:'PORTRAIT'
+            orientation:'PORTRAIT',
+            left:0
         };
     }
 
@@ -35,6 +37,7 @@ export default class VideoPlayer extends Component {
             }
         });
 
+        this.animate()
     }
 
     toggleMenus=async ()=>{
@@ -57,15 +60,24 @@ export default class VideoPlayer extends Component {
         console.log('触摸操作结束时触发',event)
     };
 
+    animate() {
+        this.animatedValue.setValue(0);
+        Animated.timing(
+            this.animatedValue,
+            {
+                toValue: 1,
+                duration: 300,
+                easing: Easing.linear
+            }
+        ).start()
+    }
 
 
     render(){
         return (
             <MenusContext.Provider value={this.state}>
-                <TouchComponent style={[styles[this.state.orientation],styles.container]}
-                      onStartShouldSetResponder={this.toggleMenus}
-                      // onResponderMove={this.onResponderMove}
-                >
+                <TouchComponent style={[styles[this.state.orientation],styles.container]}>
+
                     {/******* top menus *******/}
                     <TopMenus/>
 
