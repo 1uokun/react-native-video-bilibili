@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
-import Video from 'react-native-video';
+// import Video from 'react-native-video';
 import {
     View,
     Animated,
     Dimensions,
     StyleSheet,
     Image,
+    TouchableOpacity,
     TouchableWithoutFeedback, Easing
 } from 'react-native'
 import AinmateComponent from './lib/animate'
@@ -22,7 +23,7 @@ export default class VideoPlayer extends Component {
         this.state={
             visible:true,
             orientation:'PORTRAIT',
-            left:0
+            left:20
         };
     }
 
@@ -83,6 +84,32 @@ export default class VideoPlayer extends Component {
 
                     {/******* bottom menus *******/}
                     <BottomMenus />
+
+                    {/******* seek timer *******/}
+                    <View
+                        onStartShouldSetResponder={(e)=>{
+                            console.log('parent',e.nativeEvent.locationX,e)
+                            // this.setState({left:e.nativeEvent.locationX})
+                            return true
+                        }}
+                        onResponderMove={(e)=>{
+                            console.log('move',e.nativeEvent)
+                            this.setState({left:e.nativeEvent.locationX})
+                        }}
+                        style={{width:'100%',height:20,justifyContent:'center',backgroundColor:'green'}}
+                    >
+                        <View
+                            onStartShouldSetResponder={(e)=>{
+                                console.log('点到我了',e.nativeEvent.locationX,e)
+                                return false
+                            }}
+                            onMoveShouldSetResponder={(e)=>{
+                                return false
+                            }}
+                            style={{position:'absolute',left:this.state.left,height:20,width:20,borderRadius:10,backgroundColor:'#fff'}}
+                        />
+
+                    </View>
                 </TouchComponent>
             </MenusContext.Provider>
         )
