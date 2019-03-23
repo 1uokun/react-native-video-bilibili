@@ -10,7 +10,8 @@ import {
     TouchableWithoutFeedback, Easing
 } from 'react-native'
 import AinmateComponent from './lib/animate'
-import TouchComponent from './lib/touch'
+import TouchView from './lib/TouchView'
+import SeekBar from "./lib/Seekbar";
 
 const MenusContext = React.createContext({});
 
@@ -23,7 +24,7 @@ export default class VideoPlayer extends Component {
         this.state={
             visible:true,
             orientation:'PORTRAIT',
-            left:20
+            isTouched:false
         };
     }
 
@@ -73,11 +74,10 @@ export default class VideoPlayer extends Component {
         ).start()
     }
 
-
     render(){
         return (
             <MenusContext.Provider value={this.state}>
-                <TouchComponent style={[styles[this.state.orientation],styles.container]}>
+                <TouchView style={[styles[this.state.orientation],styles.container]}>
 
                     {/******* top menus *******/}
                     <TopMenus/>
@@ -85,32 +85,11 @@ export default class VideoPlayer extends Component {
                     {/******* bottom menus *******/}
                     <BottomMenus />
 
-                    {/******* seek timer *******/}
-                    <View
-                        onStartShouldSetResponder={(e)=>{
-                            console.log('parent',e.nativeEvent.locationX,e)
-                            // this.setState({left:e.nativeEvent.locationX})
-                            return true
-                        }}
-                        onResponderMove={(e)=>{
-                            console.log('move',e.nativeEvent)
-                            this.setState({left:e.nativeEvent.locationX})
-                        }}
-                        style={{width:'100%',height:20,justifyContent:'center',backgroundColor:'green'}}
-                    >
-                        <View
-                            onStartShouldSetResponder={(e)=>{
-                                console.log('点到我了',e.nativeEvent.locationX,e)
-                                return false
-                            }}
-                            onMoveShouldSetResponder={(e)=>{
-                                return false
-                            }}
-                            style={{position:'absolute',left:this.state.left,height:20,width:20,borderRadius:10,backgroundColor:'#fff'}}
-                        />
-
-                    </View>
-                </TouchComponent>
+                    {/******* seek bar *******/}
+                    <SeekBar horizontal>
+                        <View style={{width:20,height:20,borderRadius:10,backgroundColor:'red'}}/>
+                    </SeekBar>
+                </TouchView>
             </MenusContext.Provider>
         )
     }
@@ -162,6 +141,10 @@ BottomMenus.contextType = MenusContext;
 
 const styles = StyleSheet.create({
     container:{
+        // width:200,
+        flex:1,
+        marginBottom:200,
+        // margin:100,
         backgroundColor: '#000000',
         justifyContent:'space-between'
     },
