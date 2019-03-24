@@ -16,5 +16,4 @@ UI components
 |----|----|
 |renderTopMenus|node|
 |renderBottomMenus|node|
-|renderRightMenus|node|
 |progressIcon|node|
