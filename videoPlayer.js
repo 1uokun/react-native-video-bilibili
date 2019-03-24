@@ -12,7 +12,11 @@ import AnimatedComponent from './lib/AnimatedComponent'
 import TouchView from './lib/TouchView'
 import SeekBar from "./lib/Seekbar";
 
+// context
 const MenusContext = React.createContext({});
+
+// timer
+let centerMenusTimer;
 
 export default class VideoPlayer extends Component {
     static defaultProps = {
@@ -96,7 +100,7 @@ class TopMenus extends AnimatedComponent {
         return (
             <MenusContext.Consumer>
                 {({state,props})=>
-                    <Animated.View style={[state.visible?this.translateDown:this.translateUp,state.visible?this.Appear:this.Disappear,{flexDirection: 'row',justifyContent: 'space-between',alignItems: 'center'}]}>
+                    <Animated.View onStartShouldSetResponder={()=>{return true}} style={[state.visible?this.translateDown:this.translateUp,state.visible?this.Appear:this.Disappear,{flexDirection: 'row',justifyContent: 'space-between',alignItems: 'center'}]}>
                         {typeof props.renderTopMenus === 'function'?
                             <React.Fragment>
                                 {props.renderTopMenus()}
@@ -121,7 +125,7 @@ class BottomMenus extends AnimatedComponent {
         return (
             <MenusContext.Consumer>
                 {({state,props})=>
-                    <Animated.View style={[state.visible?this.translateUp:this.translateDown,state.visible?this.Appear:this.Disappear,{flexDirection: 'row',justifyContent: 'space-between',alignItems: 'center'}]}>
+                    <Animated.View onStartShouldSetResponder={()=>{return true}} style={[state.visible?this.translateUp:this.translateDown,state.visible?this.Appear:this.Disappear,{flexDirection: 'row',justifyContent: 'space-between',alignItems: 'center'}]}>
                         {typeof props.renderBottomMenus === 'function'?
                             <React.Fragment>
                                 {props.renderBottomMenus()}
@@ -144,11 +148,24 @@ class BottomMenus extends AnimatedComponent {
 }
 
 class CenterMenus extends AnimatedComponent {
+    state={
+        visible:false
+    };
+    async componentWillReceiveProps(nextProps,nextContext){
+        if(this.context.state.volume!==nextContext.state.volume){
+            await clearTimeout(centerMenusTimer);
+            centerMenusTimer = setTimeout(()=>{
+                this.setState({visible:false})
+            },1500);
+            !this.state.visible&&this.setState({visible:true})
+        }
+    }
+
     render(){
         return (
             <MenusContext.Consumer>
                 {({state,props}) =>
-                    <Animated.View style={[state.visible?this.Appear:this.Disappear,styles.modal]}>
+                    <Animated.View style={[this.state.visible?this.Appear:this.Disappear,styles.modal]}>
                         <View style={[styles.modal, {opacity: 0.5, position: 'absolute', backgroundColor: '#000000'}]}/>
                         <Image source={require('./assets/icon.png')} style={{width: 20, marginHorizontal: 10}}
                                resizeMode={'contain'}/>
@@ -190,6 +207,7 @@ const styles = StyleSheet.create({
         height:40,
         borderRadius:5,
         backgroundColor:'transparent',
+        // opacity:0
     },
     progress:{
         flex:1,

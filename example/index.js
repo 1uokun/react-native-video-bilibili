@@ -2,8 +2,8 @@ import React from 'react'
 import {View, SafeAreaView, ScrollView, StatusBar, Animated} from 'react-native'
 import VideoPlayer from '../videoPlayer'
 // import Orientation from 'react-native-orientation'
-import SplashScreen from "react-native-splash-screen";
-SplashScreen.hide();
+// import SplashScreen from "react-native-splash-screen";
+// SplashScreen.hide();
 
 
 export default class extends React.Component {
