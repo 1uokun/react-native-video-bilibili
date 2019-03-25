@@ -63,6 +63,11 @@ export default class VideoPlayer extends Component {
         }
     };
 
+    /******* left touchMove event *******/
+    handleUpAndDownMoveInLeft=(offset)=>{
+        //need your pull request to complete control the root light
+    };
+
     toggleMenus=()=>{
         let visible = this.state.visible;
         this.setState({visible:!visible})
@@ -100,7 +105,7 @@ class TopMenus extends AnimatedComponent {
         return (
             <MenusContext.Consumer>
                 {({state,props})=>
-                    <Animated.View onStartShouldSetResponder={()=>{return true}} style={[state.visible?this.translateDown:this.translateUp,state.visible?this.Appear:this.Disappear,{flexDirection: 'row',justifyContent: 'space-between',alignItems: 'center'}]}>
+                    <Animated.View onStartShouldSetResponder={()=>{return true}} style={[this.state.topMenusTranslate,state.visible?this.Appear:this.Disappear,{flexDirection: 'row',justifyContent: 'space-between',alignItems: 'center'}]}>
                         {typeof props.renderTopMenus === 'function'?
                             <React.Fragment>
                                 {props.renderTopMenus()}
@@ -125,7 +130,7 @@ class BottomMenus extends AnimatedComponent {
         return (
             <MenusContext.Consumer>
                 {({state,props})=>
-                    <Animated.View onStartShouldSetResponder={()=>{return true}} style={[state.visible?this.translateUp:this.translateDown,state.visible?this.Appear:this.Disappear,{flexDirection: 'row',justifyContent: 'space-between',alignItems: 'center'}]}>
+                    <Animated.View onStartShouldSetResponder={()=>{return true}} style={[this.state.bottomMenusTranslate,state.visible?this.Appear:this.Disappear,{flexDirection: 'row',justifyContent: 'space-between',alignItems: 'center'}]}>
                         {typeof props.renderBottomMenus === 'function'?
                             <React.Fragment>
                                 {props.renderBottomMenus()}
@@ -151,6 +156,10 @@ class CenterMenus extends AnimatedComponent {
     state={
         visible:false
     };
+
+    //overload
+    animate(){}
+
     async componentWillReceiveProps(nextProps,nextContext){
         if(this.context.state.volume!==nextContext.state.volume){
             await clearTimeout(centerMenusTimer);
@@ -165,7 +174,7 @@ class CenterMenus extends AnimatedComponent {
         return (
             <MenusContext.Consumer>
                 {({state,props}) =>
-                    <Animated.View style={[this.state.visible?this.Appear:this.Disappear,styles.modal]}>
+                    <Animated.View style={[this.state.visible?this.Disappear:this.Appear,styles.modal]}>
                         <View style={[styles.modal, {opacity: 0.5, position: 'absolute', backgroundColor: '#000000'}]}/>
                         <Image source={require('./assets/icon.png')} style={{width: 20, marginHorizontal: 10}}
                                resizeMode={'contain'}/>
