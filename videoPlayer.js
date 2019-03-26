@@ -1,16 +1,18 @@
 import React, { Component } from 'react';
-// import Video from 'react-native-video';
+import Video from 'react-native-video';
 import {
     Animated,
     View,
     Dimensions,
     StyleSheet,
     Image,
+    Text,
     TouchableWithoutFeedback
 } from 'react-native'
 import AnimatedComponent from './lib/AnimatedComponent'
 import TouchView from './lib/TouchView'
 import SeekBar from "./lib/Seekbar";
+import {formatTime} from './lib/util'
 
 // context
 const MenusContext = React.createContext({});
@@ -20,9 +22,10 @@ let centerMenusTimer;
 
 export default class VideoPlayer extends Component {
     static defaultProps = {
-        volume:             100,
-        renderTopMenus:           null,
-        renderBottomMenus:        null,
+        volume:                     100,
+        paused:                     false,
+        renderTopMenus:             null,
+        renderBottomMenus:          null,
     };
 
     constructor(props){
@@ -35,6 +38,10 @@ export default class VideoPlayer extends Component {
 
             //video props
             volume:this.props.volume,
+            paused:this.props.paused,
+            duration:0,
+            currentTime:0,
+            playableDuration:0
         };
     }
 
@@ -73,6 +80,11 @@ export default class VideoPlayer extends Component {
         this.setState({visible:!visible})
     };
 
+    handleDoubleTouch=()=>{
+        let paused = this.state.paused;
+        this.setState({paused:!paused})
+    };
+
 
     render(){
         return (
@@ -80,23 +92,52 @@ export default class VideoPlayer extends Component {
                 <TouchView style={[styles[this.state.orientation],styles.container]}
                            handleSingleTouch={this.toggleMenus}
                            handleUpAndDownMoveInRight={this.handleUpAndDownMoveInRight}
+                           handleDoubleTouch={this.handleDoubleTouch}
                 >
+                    {/************** VIDEO **************/}
+                    <Video source={{uri: "https://luokun.oss-cn-hangzhou.aliyuncs.com/test.mp4"}}
+                           style={{flex:1}}
+                           paused={this.state.paused}
+                           onLoadStart={ this.onLoadStart }
+                           onLoad={  this.onLoad }
+                           onProgress={  this.onProgress }
+                           // onError={  (e)=>{console.log('onError',e)} }
+                           // onEnd={  (e)=>{console.log('onEnd',e)} }
+                    />
+                    {/************** MENUS **************/}
+                    <View style={{position:'absolute',width:'100%',height:'100%',justifyContent:'center'}}>
+                        {/******* top menus *******/}
+                        <View style={{flex:1,justifyContent:'flex-start'}}>
+                            <TopMenus/>
+                        </View>
 
-                    {/******* top menus *******/}
-                    <View style={{flex:1,justifyContent:'flex-start'}}>
-                        <TopMenus/>
+                        {/******* center menus *******/}
+                        <CenterMenus />
+
+                        {/******* bottom menus *******/}
+                        <View style={{flex:1,justifyContent:'flex-end'}}>
+                            <BottomMenus/>
+                        </View>
                     </View>
 
-                    {/******* center menus *******/}
-                    <CenterMenus />
-
-                    {/******* bottom menus *******/}
-                    <View style={{flex:1,justifyContent:'flex-end'}}>
-                        <BottomMenus/>
-                    </View>
                 </TouchView>
             </MenusContext.Provider>
         )
+    }
+
+    onLoadStart=(e)=>{
+    };
+
+    onLoad=async (e)=>{
+        await this.setState({
+            duration:e.duration,
+        })
+    };
+    onProgress=(e)=>{
+        this.setState({
+            currentTime:e.currentTime,
+            playableDuration:e.playableDuration
+        })
     }
 }
 
@@ -140,9 +181,19 @@ class BottomMenus extends AnimatedComponent {
                                     <Image source={require('./assets/icon.png')} style={{width:15,marginHorizontal:10}} resizeMode={'contain'}/>
                                 </TouchableWithoutFeedback>
                                 {/******* seek bar *******/}
-                                <SeekBar horizontal>
+                                <SeekBar
+                                    duration={state.duration}
+                                    currentTime={state.currentTime}
+                                    playableDuration={state.playableDuration}
+                                >
                                     <View style={{width:10,height:10,borderRadius:5,backgroundColor:'red'}}/>
                                 </SeekBar>
+                                {/******* seek timer *******/}
+                                <View style={{flexDirection:'row',alignItems:'center',paddingHorizontal: 10}}>
+                                    <Text style={{color:'white'}}>{formatTime(state.currentTime)}</Text>
+                                    <Text style={{color:'white'}}>/</Text>
+                                    <Text style={{color:'white'}}>{formatTime(state.duration)}</Text>
+                                </View>
                             </React.Fragment>
                         }
                     </Animated.View>
@@ -195,7 +246,6 @@ CenterMenus.contextType = MenusContext;
 const styles = StyleSheet.create({
     container:{
         backgroundColor: '#000000',
-        justifyContent:'center'
     },
     PORTRAIT:{
         width:'100%',

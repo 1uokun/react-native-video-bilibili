@@ -2,8 +2,8 @@ import React from 'react'
 import {View, SafeAreaView, ScrollView, StatusBar, Animated} from 'react-native'
 import VideoPlayer from '../videoPlayer'
 // import Orientation from 'react-native-orientation'
-// import SplashScreen from "react-native-splash-screen";
-// SplashScreen.hide();
+import SplashScreen from "react-native-splash-screen";
+SplashScreen.hide();
 
 
 export default class extends React.Component {
@@ -19,16 +19,16 @@ export default class extends React.Component {
             <SafeAreaView style={{flex:1,backgroundColor:'#000000'}}>
                 <StatusBar barStyle={'light-content'} translucent/>
                 <VideoPlayer
-                    renderTopMenus={(a)=>{
-                        return (
-                            <View style={{flex:1,height:20,backgroundColor:'green'}}></View>
-                        )
-                    }}
-                    renderBottomMenus={()=>{
-                        return (
-                            <View style={{flex:1,height:20,backgroundColor:'green'}}></View>
-                        )
-                    }}
+                    // renderTopMenus={(a)=>{
+                    //     return (
+                    //         <View style={{flex:1,height:20,backgroundColor:'green'}}></View>
+                    //     )
+                    // }}
+                    // renderBottomMenus={()=>{
+                    //     return (
+                    //         <View style={{flex:1,height:20,backgroundColor:'green'}}></View>
+                    //     )
+                    // }}
                 />
                 <View style={{flex:1,backgroundColor:'#FFFFFF'}}>
                     {/****** user ******/}
