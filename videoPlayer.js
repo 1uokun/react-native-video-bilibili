@@ -39,9 +39,9 @@ export default class VideoPlayer extends Component {
             //video props
             volume:this.props.volume,
             paused:this.props.paused,
-            duration:0,
-            currentTime:0,
-            playableDuration:0
+            duration:100,
+            currentTime:50,
+            playableDuration:70
         };
     }
 
@@ -55,6 +55,12 @@ export default class VideoPlayer extends Component {
                 this.setState({orientation:'PORTRAIT'})
             }
         });
+
+        setInterval(()=>{
+            let currentTime = this.state.currentTime;
+            currentTime+=1;
+            this.setState({currentTime:currentTime})
+        },1000)
     }
 
     /******* right touchMove event *******/
@@ -89,38 +95,35 @@ export default class VideoPlayer extends Component {
     render(){
         return (
             <MenusContext.Provider value={{state:this.state,props:this.props}}>
-                <TouchView style={[styles[this.state.orientation],styles.container]}
-                           handleSingleTouch={this.toggleMenus}
-                           handleUpAndDownMoveInRight={this.handleUpAndDownMoveInRight}
-                           handleDoubleTouch={this.handleDoubleTouch}
-                >
+                <View style={[styles[this.state.orientation],styles.container]}>
                     {/************** VIDEO **************/}
-                    <Video source={{uri: "https://luokun.oss-cn-hangzhou.aliyuncs.com/test.mp4"}}
-                           style={{flex:1}}
+                    <Video
+                        // source={{uri: "https://luokun.oss-cn-hangzhou.aliyuncs.com/test.mp4"}}
+                           style={{width:'100%',height:'100%',position:'absolute'}}
+                           volume={this.state.volume}
                            paused={this.state.paused}
                            onLoadStart={ this.onLoadStart }
                            onLoad={  this.onLoad }
                            onProgress={  this.onProgress }
-                           // onError={  (e)=>{console.log('onError',e)} }
-                           // onEnd={  (e)=>{console.log('onEnd',e)} }
+                        // onError={  (e)=>{console.log('onError',e)} }
+                        // onEnd={  (e)=>{console.log('onEnd',e)} }
                     />
-                    {/************** MENUS **************/}
-                    <View style={{position:'absolute',width:'100%',height:'100%',justifyContent:'center'}}>
+                    <TouchView style={{flex:1,backgroundColor:'transparent',justifyContent:'space-between'}}
+                               handleSingleTouch={this.toggleMenus}
+                               handleUpAndDownMoveInRight={this.handleUpAndDownMoveInRight}
+                               handleDoubleTouch={this.handleDoubleTouch}
+                    >
                         {/******* top menus *******/}
-                        <View style={{flex:1,justifyContent:'flex-start'}}>
-                            <TopMenus/>
-                        </View>
+                        <TopMenus/>
 
                         {/******* center menus *******/}
                         <CenterMenus />
 
                         {/******* bottom menus *******/}
-                        <View style={{flex:1,justifyContent:'flex-end'}}>
-                            <BottomMenus/>
-                        </View>
-                    </View>
+                        <BottomMenus/>
 
-                </TouchView>
+                    </TouchView>
+                </View>
             </MenusContext.Provider>
         )
     }
@@ -146,7 +149,7 @@ class TopMenus extends AnimatedComponent {
         return (
             <MenusContext.Consumer>
                 {({state,props})=>
-                    <Animated.View onStartShouldSetResponder={()=>{return true}} style={[this.state.topMenusTranslate,state.visible?this.Appear:this.Disappear,{flexDirection: 'row',justifyContent: 'space-between',alignItems: 'center'}]}>
+                    <Animated.View onStartShouldSetResponder={()=>{return true}} style={[this.state.topMenusTranslate,state.visible?this.Appear:this.Disappear,{flexDirection: 'row',justifyContent: 'space-between',alignItems: 'center',backgroundColor:'yellow'}]}>
                         {typeof props.renderTopMenus === 'function'?
                             <React.Fragment>
                                 {props.renderTopMenus()}
@@ -171,14 +174,15 @@ class BottomMenus extends AnimatedComponent {
         return (
             <MenusContext.Consumer>
                 {({state,props})=>
-                    <Animated.View onStartShouldSetResponder={()=>{return true}} style={[this.state.bottomMenusTranslate,state.visible?this.Appear:this.Disappear,{flexDirection: 'row',justifyContent: 'space-between',alignItems: 'center'}]}>
-                        {typeof props.renderBottomMenus === 'function'?
+                    <Animated.View onStartShouldSetResponder={()=>{return true}} style={[this.state.bottomMenusTranslate,state.visible?this.Appear:this.Disappear,{flexDirection:'row',alignItems:'center'}]}>
+                        {typeof props.renderBottomMenus === 'function' ?
                             <React.Fragment>
                                 {props.renderBottomMenus()}
-                            </React.Fragment>:
+                            </React.Fragment> :
                             <React.Fragment>
                                 <TouchableWithoutFeedback>
-                                    <Image source={require('./assets/icon.png')} style={{width:15,marginHorizontal:10}} resizeMode={'contain'}/>
+                                    <Image source={require('./assets/icon.png')}
+                                           style={{width: 15, marginHorizontal: 10}} resizeMode={'contain'}/>
                                 </TouchableWithoutFeedback>
                                 {/******* seek bar *******/}
                                 <SeekBar
@@ -186,10 +190,11 @@ class BottomMenus extends AnimatedComponent {
                                     currentTime={state.currentTime}
                                     playableDuration={state.playableDuration}
                                 >
-                                    <View style={{width:10,height:10,borderRadius:5,backgroundColor:'red'}}/>
+                                    <View style={{width: 10, height: 10, borderRadius: 5, backgroundColor: 'red'}}/>
                                 </SeekBar>
                                 {/******* seek timer *******/}
-                                <View style={{flexDirection:'row',alignItems:'center',paddingHorizontal: 10}}>
+                                {/******* seek timer *******/}
+                                <View style={{marginLeft:10,width:80,flexDirection:'row',alignItems:'center',paddingHorizontal: 10}}>
                                     <Text style={{color:'white'}}>{formatTime(state.currentTime)}</Text>
                                     <Text style={{color:'white'}}>/</Text>
                                     <Text style={{color:'white'}}>{formatTime(state.duration)}</Text>
@@ -246,6 +251,7 @@ CenterMenus.contextType = MenusContext;
 const styles = StyleSheet.create({
     container:{
         backgroundColor: '#000000',
+        justifyContent:'space-between'
     },
     PORTRAIT:{
         width:'100%',
