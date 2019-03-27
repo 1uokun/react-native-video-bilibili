@@ -227,12 +227,14 @@ class CenterMenus extends AnimatedComponent {
     animate(){}
 
     async componentWillReceiveProps(nextProps,nextContext){
-        if(this.context.state.volume!==nextContext.state.volume){
-            await clearTimeout(centerMenusTimer);
+        if(this.context.state.volume!==nextContext.state.volume
+            ||nextContext.state.volume===100
+            ||nextContext.state.volume===0){
+            clearTimeout(centerMenusTimer);
             centerMenusTimer = setTimeout(()=>{
-                this.setState({visible:false})
+                this.state.visible&&this.setState({visible:false})
             },1500);
-            !this.state.visible&&this.setState({visible:true})
+            await !this.state.visible&&this.setState({visible:true})
         }
     }
 

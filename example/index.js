@@ -6,7 +6,8 @@ import VideoPlayer from '../videoPlayer'
 // SplashScreen.hide();
 
 
-export default class extends React.Component {
+
+class Index extends React.Component {
     constructor(props){
         super(props);
         this.state={
@@ -76,3 +77,49 @@ export default class extends React.Component {
         )
     }
 }
+
+class Demo extends React.Component {
+    state={
+        left:0
+    }
+
+    render(){
+        return (
+            <View style={{flex:1,justifyContent:'center'}}>
+                <View
+                    accessible={true}
+                    hitSlop={{top: 100, bottom: 100, left: 0, right: 0}}
+                    onStartShouldSetResponder={(e)=>{
+                        console.log('parent line',e.nativeEvent.locationX,e)
+                        this.setState({left:e.nativeEvent.locationX})
+                        return true
+                    }}
+                    onResponderMove={(e)=>{
+                        console.log('move',e.nativeEvent)
+                        this.setState({left:e.nativeEvent.locationX})
+                    }}
+                    style={{width:'100%',height:20,justifyContent:'center',backgroundColor:'green'}}
+                >
+                    <View
+                        hitSlop={{top: 100, bottom: 100, left: 0, right: 0}}
+                        onStartShouldSetResponder={(e)=>{
+                            console.log('child point',e.nativeEvent.locationX,e)
+                            return false
+                        }}
+                        onMoveShouldSetResponder={(e)=>{
+                            return false
+                        }}
+                        onResponderTerminate={(e)=>{
+                            console.log('事件被劫持',e)
+                        }}
+                        pointerEvents={'box-none'}
+                        onResponderTerminationRequest={()=>{return true}}
+                        style={{position:'absolute',left:this.state.left,height:20,width:20,borderRadius:10,backgroundColor:'#fff'}}
+                    />
+
+                </View>
+            </View>
+        )
+    }
+}
+export default Index
