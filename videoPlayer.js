@@ -5,11 +5,14 @@ import {
     Image,
     StyleSheet,
     Animated,
-    Easing,
+    ProgressBarAndroid,
+    Slider,
     TouchableOpacity
 } from 'react-native'
 import ResponderView from './lib/ResponderView'
 import AnimatedComponent from './lib/AnimatedComponent'
+import {formatTime} from './lib/util'
+import Video from 'react-native-video'
 
 // context
 const MenusContext = React.createContext({});
@@ -32,6 +35,8 @@ class VideoPlayer extends React.PureComponent {
             //video props
             volume:this.props.volume,
             paused:this.props.paused,
+            duration:0,
+            playableDuration:0,
             currentTime:this.props.currentTime,
         }
     }
@@ -57,7 +62,7 @@ class VideoPlayer extends React.PureComponent {
         let volume = this.state.volume;
         volume+=offset;
         if(volume<0){
-            this.setState({volume:1});//dont ask me why
+            this.setState({volume:1});//don't ask me why
             this.setState({volume:0})
         }else if(volume>100){
             this.setState({volume:99});
@@ -73,6 +78,18 @@ class VideoPlayer extends React.PureComponent {
             <View ref={'container'}
                   style={styles.container}
             >
+                <Video
+                    ref={'player'}
+                    source={{uri: "http://www.w3school.com.cn/example/html5/mov_bbb.mp4"}}
+                    style={{width:'100%',height:'100%',position:'absolute'}}
+                    volume={this.state.volume}
+                    paused={this.state.paused}
+                    onLoadStart={ this.onLoadStart }
+                    onLoad={  this.onLoad }
+                    onProgress={  this.onProgress }
+                    onError={  (e)=>{console.log('onError',e)} }
+                    onEnd={  (e)=>{console.log('onEnd',e)} }
+                />
                 <ResponderView
                     handleSingleTouch={this._handleSingleTouch}
                     handleDoubleTouch={this._handleDoubleTouch}
@@ -86,16 +103,33 @@ class VideoPlayer extends React.PureComponent {
 
                     {/********** top menus **********/}
 
-                        {/*<TopMenus />*/}
+                        {/*<TopMenus visible={this.state.visible}/>*/}
 
                     {/********** bottom menus **********/}
 
-                        <BottomMenus visible={this.state.visible}/>
+                        <BottomMenus
+                            visible={this.state.visible}
+                        />
 
                 </ResponderView>
             </View>
             </MenusContext.Provider>
         )
+    }
+
+    onLoadStart=(e)=>{
+    };
+
+    onLoad=async (e)=>{
+        await this.setState({
+            duration:e.duration,
+        })
+    };
+    onProgress=(e)=>{
+        this.setState({
+            currentTime:e.currentTime,
+            playableDuration:e.playableDuration
+        })
     }
 }
 
@@ -131,7 +165,8 @@ class CenterMenus extends AnimatedComponent {
                                 <Image source={require('./assets/icon.png')} style={{width: 20, marginHorizontal: 10}}
                                        resizeMode={'contain'}/>
                                 <View style={styles.progress}>
-                                    <View style={[styles.readProgress, {width: state.volume + '%'}]}/>
+                                    <ProgressBarAndroid styleAttr="Horizontal" indeterminate={false} progress={state.volume/100} color={'pink'} style={{height:2}}/>
+                                    {/*<View style={[styles.readProgress, {width: state.volume + '%'}]}/>*/}
                                 </View>
                             </View>
                         }
@@ -143,15 +178,23 @@ class CenterMenus extends AnimatedComponent {
 }
 
 class TopMenus extends AnimatedComponent {
+    constructor(props){
+        super(props);
+        this.state={
+            loadable:false
+        };
+    }
+
     componentWillUpdate(nextProps, nextState, nextContext) {
-        this.animate()
+        this.setState({loadable:true});
+        this.animate(2000)
     }
 
     render(){
         return (
             <MenusContext.Consumer>
                 {({state, props}) =>
-                    <Animated.View style={[styles.topMenusContainer,this.Appear,this.Disappear]}>
+                    this.state.loadable && <Animated.View style={[styles.topMenusContainer,this.Appear,this.Disappear]}>
                         {typeof props.renderTopMenus === 'function' ?
 
                             props.renderTopMenus(state, props):
@@ -171,36 +214,64 @@ class BottomMenus extends AnimatedComponent {
     constructor(props){
         super(props);
         this.state={
-            loadable:false
         };
-    }
-
-    componentWillUpdate(nextProps, nextState, nextContext) {
-        this.setState({loadable:true});
-        this.animate()
     }
 
     render(){
         return (
             <MenusContext.Consumer>
                 {({state, props}) =>
-                    this.state.loadable && <Animated.View style={[styles.bottomMenusContainer,this.Appear,this.Disappear]}>
-                        {typeof props.renderBottomMenus === 'function' ?
+                    <React.Fragment>
+                        <View style={[styles.bottomMenusContainer,{opacity:1}]}>
+                            {typeof props.renderBottomMenus === 'function' ?
 
-                            props.renderBottomMenus(state, props):
+                                props.renderBottomMenus(state, props):
 
-                            <View style={{height:30,backgroundColor:'yellow'}}>
+                                <View style={{height:30,backgroundColor:'transparent',flexDirection:'row',alignItems:'center'}}>
+                                    <Image source={require('./assets/icon.png')} style={{width:15}} resizeMode={'contain'} />
 
-                            </View>
-                        }
-                    </Animated.View>
+                                    {/********** seek bar **********/}
+                                    <View style={{flex:1,justifyContent:'center',backgroundColor:'transparent'}}>
+
+                                        {/********** playableDuration **********/}
+                                        <Slider style={{width:'100%',position:'absolute'}}
+                                                value={state.playableDuration}
+                                                maximumValue={state.duration}
+                                                minimumTrackTintColor={'gray'}
+                                                maximumTrackTintColor={'transparent'}
+                                                thumbTintColor={'transparent'}
+                                        />
+
+                                        {/********** currentTime **********/}
+                                        <Slider style={{flex:1}}
+                                                step={1}
+                                                value={state.currentTime}
+                                                maximumValue={state.duration}
+                                                minimumTrackTintColor={'pink'}
+                                                maximumTrackTintColor={'gray'}
+                                                thumbTintColor={'pink'}
+                                                // onSlidingComplete={(value)=>this.props.seekTo(value)}
+                                                // onValueChange={(value)=>this.props.onSliderTouch(value)}
+                                        />
+                                    </View>
+
+                                    <View style={{flexDirection:'row',alignItems:'center',}}>
+                                        <Text style={{color:'white'}}>{formatTime(state.currentTime)}</Text>
+                                        <Text style={{color:'white'}}>/</Text>
+                                        <Text style={{color:'white'}}>{formatTime(state.duration)}</Text>
+                                    </View>
+                                </View>
+                            }
+                        </View>
+                        {/*<ProgressBarAndroid styleAttr="Horizontal" indeterminate={false} progress={0.34444} color={'pink'} style={{height:3}}/>*/}
+                    </React.Fragment>
                 }
             </MenusContext.Consumer>
         )
     }
 }
 
-TopMenus.contextType = MenusContext;
+// TopMenus.contextType = MenusContext;
 // BottomMenus.contextType = MenusContext;
 // CenterMenus.contextType = MenusContext;
 
@@ -231,7 +302,7 @@ const styles = StyleSheet.create({
     progress:{
         flex:1,
         marginRight:10,
-        height:2,
+        // height:2,
         backgroundColor:'white'
     },
     readProgress:{
@@ -249,8 +320,7 @@ const styles = StyleSheet.create({
     //bottom menus
     bottomMenusContainer:{
         flex:1,
-        justifyContent: 'flex-end',
-        opacity:0
+        justifyContent: 'flex-end'
     },
 });
 

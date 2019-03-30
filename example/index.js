@@ -18,7 +18,7 @@ class Index extends React.Component {
     render(){
         return (
             <SafeAreaView style={{flex:1,backgroundColor:'#000000'}}>
-                <StatusBar barStyle={'light-content'} translucent/>
+                {/*<StatusBar barStyle={'light-content'} translucent/>*/}
                 <VideoPlayer
                     // renderTopMenus={(a)=>{
                     //     return (
