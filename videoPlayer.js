@@ -5,7 +5,9 @@ import {
     Image,
     StyleSheet,
     Animated,
+    Platform,
     ProgressBarAndroid,
+    ProgressViewIOS,
     Slider,
     TouchableOpacity
 } from 'react-native'
@@ -31,6 +33,9 @@ class VideoPlayer extends React.PureComponent {
         super(props);
         this.state={
             visible:false,
+            sliderAutoEnable:false,
+            seekTime:0,
+            _currentTime_copy:0,
 
             //video props
             volume:this.props.volume,
@@ -47,11 +52,20 @@ class VideoPlayer extends React.PureComponent {
     };
 
     _handleDoubleTouch=()=>{
-        console.log('双击')
+        let paused = this.state.paused;
+        this.setState({paused:!paused})
     };
 
-    _handleLeftAndRightMove=(offset,percent)=>{
-        console.log('seek timer',offset,percent)
+    _handleLeftAndRightMove=async (offset,percent)=>{
+        await this.setState({sliderAutoEnable:false});
+        let seekTime = this.state.seekTime;
+        seekTime=seekTime*(1+percent);
+        this.setState({seekTime:seekTime})
+    };
+
+    _handleLeftAndRightMoveComplete=async ()=>{
+        let seekTime = this.state.seekTime;
+        await this.setState({sliderAutoEnable:true,currentTime:seekTime});
     };
 
     _handleUpAndDownMoveInLeft=(offset,percent)=>{
@@ -74,13 +88,21 @@ class VideoPlayer extends React.PureComponent {
 
     render(){
         return (
-            <MenusContext.Provider value={{state:this.state,props:this.props}}>
+            <MenusContext.Provider value={{
+                state:this.state,
+                props:{
+                    ...this.props,
+                    onCurrentTimeProgress:this.onCurrentTimeProgress,
+                    onSlidingComplete:this.onSlidingComplete
+                },
+            }}>
             <View ref={'container'}
                   style={styles.container}
             >
                 <Video
                     ref={'player'}
-                    source={{uri: "http://www.w3school.com.cn/example/html5/mov_bbb.mp4"}}
+                    source={{uri: "https://media.w3.org/2010/05/sintel/trailer.mp4"}}
+                    // source={{uri: "http://www.w3school.com.cn/example/html5/mov_bbb.mp4"}}
                     style={{width:'100%',height:'100%',position:'absolute'}}
                     volume={this.state.volume}
                     paused={this.state.paused}
@@ -94,6 +116,7 @@ class VideoPlayer extends React.PureComponent {
                     handleSingleTouch={this._handleSingleTouch}
                     handleDoubleTouch={this._handleDoubleTouch}
                     handleLeftAndRightMove={this._handleLeftAndRightMove}
+                    handleLeftAndRightMoveComplete={this._handleLeftAndRightMoveComplete}
                     handleUpAndDownMoveInLeft={this._handleUpAndDownMoveInLeft}
                     handleUpAndDownMoveInRight={this._handleUpAndDownMoveInRight}
                 >
@@ -106,10 +129,10 @@ class VideoPlayer extends React.PureComponent {
                         {/*<TopMenus visible={this.state.visible}/>*/}
 
                     {/********** bottom menus **********/}
-
-                        <BottomMenus
-                            visible={this.state.visible}
-                        />
+                    <View style={[styles.bottomMenusContainer,{opacity:1}]}>
+                        <SeekTime seekTime={this.state.seekTime}/>
+                        <BottomMenus visible={this.state.visible}/>
+                    </View>
 
                 </ResponderView>
             </View>
@@ -125,11 +148,18 @@ class VideoPlayer extends React.PureComponent {
             duration:e.duration,
         })
     };
+
     onProgress=(e)=>{
-        this.setState({
-            currentTime:e.currentTime,
-            playableDuration:e.playableDuration
-        })
+        this.state.sliderAutoEnable&&this.setState({currentTime:e.currentTime,seekTime:e.currentTime});
+        this.setState({playableDuration:e.playableDuration})
+    };
+
+    onCurrentTimeProgress=(value)=>{
+        this.setState({sliderAutoEnable:false,seekTime:value});
+    };
+
+    onSlidingComplete=(value)=>{
+        this.setState({sliderAutoEnable:true,currentTime:value,seekTime:value});
     }
 }
 
@@ -165,8 +195,11 @@ class CenterMenus extends AnimatedComponent {
                                 <Image source={require('./assets/icon.png')} style={{width: 20, marginHorizontal: 10}}
                                        resizeMode={'contain'}/>
                                 <View style={styles.progress}>
-                                    <ProgressBarAndroid styleAttr="Horizontal" indeterminate={false} progress={state.volume/100} color={'pink'} style={{height:2}}/>
-                                    {/*<View style={[styles.readProgress, {width: state.volume + '%'}]}/>*/}
+                                    {Platform.OS==='android'?
+                                        <ProgressBarAndroid styleAttr="Horizontal" indeterminate={false} progress={state.volume/100} color={'pink'} style={{height:2}}/>
+                                        :
+                                        <ProgressViewIOS trackTintColor="#FFFFFF" progressTintColor="pink" progress={state.volume/100} style={{height:2}}/>
+                                    }
                                 </View>
                             </View>
                         }
@@ -222,7 +255,7 @@ class BottomMenus extends AnimatedComponent {
             <MenusContext.Consumer>
                 {({state, props}) =>
                     <React.Fragment>
-                        <View style={[styles.bottomMenusContainer,{opacity:1}]}>
+                        <View>
                             {typeof props.renderBottomMenus === 'function' ?
 
                                 props.renderBottomMenus(state, props):
@@ -240,18 +273,21 @@ class BottomMenus extends AnimatedComponent {
                                                 minimumTrackTintColor={'gray'}
                                                 maximumTrackTintColor={'transparent'}
                                                 thumbTintColor={'transparent'}
+                                                thumbImage={require('./assets/icon_empty.png')}
                                         />
 
                                         {/********** currentTime **********/}
                                         <Slider style={{flex:1}}
-                                                step={1}
-                                                value={state.currentTime}
+                                                // step={1}
+                                                value={state.sliderAutoEnable?state.currentTime:state.seekTime}
                                                 maximumValue={state.duration}
                                                 minimumTrackTintColor={'pink'}
                                                 maximumTrackTintColor={'gray'}
                                                 thumbTintColor={'pink'}
-                                                // onSlidingComplete={(value)=>this.props.seekTo(value)}
-                                                // onValueChange={(value)=>this.props.onSliderTouch(value)}
+                                                thumbStyle={{backgroundColor:'red'}}
+                                                thumbImage={require('./assets/icon_bilibili.png')}
+                                                onSlidingComplete={props.onSlidingComplete}
+                                                onValueChange={props.onCurrentTimeProgress}
                                         />
                                     </View>
 
@@ -263,11 +299,43 @@ class BottomMenus extends AnimatedComponent {
                                 </View>
                             }
                         </View>
-                        {/*<ProgressBarAndroid styleAttr="Horizontal" indeterminate={false} progress={0.34444} color={'pink'} style={{height:3}}/>*/}
+                        {Platform.OS==='android'?
+                            <ProgressBarAndroid styleAttr="Horizontal" indeterminate={false} progress={state.currentTime/state.duration} color={'pink'} style={{height:3}}/>
+                            :
+                            <ProgressViewIOS trackTintColor="#FFFFFF" progressTintColor="pink" progress={state.currentTime/state.duration} style={{height:3}}/>
+                        }
                     </React.Fragment>
                 }
             </MenusContext.Consumer>
         )
+    }
+}
+
+
+class SeekTime extends AnimatedComponent {
+    constructor(props){
+        super(props);
+        this.state={
+            loadable:false
+        };
+    }
+
+    componentWillUpdate(nextProps, nextState, nextContext) {
+        this.setState({loadable:true});
+        this.animate()
+    }
+
+    render(){
+        return (
+            <MenusContext.Consumer>
+                {({state, props}) =>
+                    this.state.loadable && <Animated.View style={[styles.seekTimeModal,this.Appear,this.Disappear]}>
+                        <Text style={{color:'#000'}}>{formatTime(state.seekTime)}</Text>
+                    </Animated.View>
+                }
+            </MenusContext.Consumer>
+        )
+
     }
 }
 
@@ -320,8 +388,15 @@ const styles = StyleSheet.create({
     //bottom menus
     bottomMenusContainer:{
         flex:1,
-        justifyContent: 'flex-end'
+        justifyContent: 'flex-end',
     },
+
+    //seek time modal
+    seekTimeModal:{
+        width:200,
+        height:30,
+        backgroundColor:'red'
+    }
 });
 
 export default VideoPlayer
