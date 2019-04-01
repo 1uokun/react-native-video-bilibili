@@ -16,7 +16,6 @@ import AnimatedComponent from './lib/AnimatedComponent'
 import {formatTime} from './lib/util'
 import Video from 'react-native-video'
 
-// context
 const MenusContext = React.createContext({});
 
 class VideoPlayer extends React.PureComponent {
@@ -24,6 +23,7 @@ class VideoPlayer extends React.PureComponent {
         renderCenterMenus:null,
         renderTopMenus:null,
         renderBottomMenus:null,
+        renderSeekTime:null,
         volume:100,
         paused:false,
         currentTime:0,
@@ -32,10 +32,9 @@ class VideoPlayer extends React.PureComponent {
     constructor(props){
         super(props);
         this.state={
-            visible:false,
             sliderAutoEnable:false,
-            seekTime:0,
-            _currentTime_copy:0,
+            seekTimeUpdate:true,
+            menusUpdate:true,
 
             //video props
             volume:this.props.volume,
@@ -43,29 +42,42 @@ class VideoPlayer extends React.PureComponent {
             duration:0,
             playableDuration:0,
             currentTime:this.props.currentTime,
+            currentTime_copy:0,
         }
     }
 
+    /******************** responder event *******************/
     _handleSingleTouch=()=>{
-        let visible = this.state.visible;
-        this.setState({visible:!visible})
+        this.showMenusComponent()
     };
 
     _handleDoubleTouch=()=>{
-        let paused = this.state.paused;
-        this.setState({paused:!paused})
+        this.onPaused()
     };
 
     _handleLeftAndRightMove=async (offset,percent)=>{
-        await this.setState({sliderAutoEnable:false});
-        let seekTime = this.state.seekTime;
-        seekTime=seekTime*(1+percent);
-        this.setState({seekTime:seekTime})
+
+        //force update in SeekTime component
+        this.showSerkTimerComponent();
+        this.showMenusComponent();
+
+        //update currentTime
+        let duration = this.state.duration;
+        let currentTime = this.state.currentTime;
+        currentTime+=offset;
+        if(currentTime<0){
+            await this.setState({currentTime:0})
+        }else if(currentTime>duration){
+            await this.setState({currentTime:duration})
+        }else {
+            await this.setState({currentTime:currentTime})
+        }
+
+        this.onCurrentTimeProgress(this.state.currentTime);
     };
 
     _handleLeftAndRightMoveComplete=async ()=>{
-        let seekTime = this.state.seekTime;
-        await this.setState({sliderAutoEnable:true,currentTime:seekTime});
+        this.onSlidingComplete(this.state.currentTime)
     };
 
     _handleUpAndDownMoveInLeft=(offset,percent)=>{
@@ -86,6 +98,17 @@ class VideoPlayer extends React.PureComponent {
         }
     };
 
+    /******************** custom event *******************/
+    showSerkTimerComponent=()=>{
+        let seekTimeUpdate = this.state.seekTimeUpdate;
+        this.setState({seekTimeUpdate:!seekTimeUpdate});
+    };
+    showMenusComponent=()=>{
+        let menusUpdate = this.state.menusUpdate;
+        this.setState({menusUpdate:!menusUpdate});
+    };
+
+
     render(){
         return (
             <MenusContext.Provider value={{
@@ -93,24 +116,24 @@ class VideoPlayer extends React.PureComponent {
                 props:{
                     ...this.props,
                     onCurrentTimeProgress:this.onCurrentTimeProgress,
-                    onSlidingComplete:this.onSlidingComplete
+                    onSlidingComplete:this.onSlidingComplete,
+                    onPaused:this.onPaused
                 },
             }}>
             <View ref={'container'}
                   style={styles.container}
             >
                 <Video
+                    {...this.props}
                     ref={'player'}
-                    source={{uri: "https://media.w3.org/2010/05/sintel/trailer.mp4"}}
+                    source={{uri: "http://v.ysbang.cn/data/video/2015/rkb/2015rkb01.mp4"}}
                     // source={{uri: "http://www.w3school.com.cn/example/html5/mov_bbb.mp4"}}
                     style={{width:'100%',height:'100%',position:'absolute'}}
-                    volume={this.state.volume}
+                    volume={this.state.volume/100}
                     paused={this.state.paused}
                     onLoadStart={ this.onLoadStart }
                     onLoad={  this.onLoad }
                     onProgress={  this.onProgress }
-                    onError={  (e)=>{console.log('onError',e)} }
-                    onEnd={  (e)=>{console.log('onEnd',e)} }
                 />
                 <ResponderView
                     handleSingleTouch={this._handleSingleTouch}
@@ -126,12 +149,12 @@ class VideoPlayer extends React.PureComponent {
 
                     {/********** top menus **********/}
 
-                        {/*<TopMenus visible={this.state.visible}/>*/}
+                        <TopMenus menusUpdate={this.state.menusUpdate}/>
 
                     {/********** bottom menus **********/}
                     <View style={[styles.bottomMenusContainer,{opacity:1}]}>
-                        <SeekTime seekTime={this.state.seekTime}/>
-                        <BottomMenus visible={this.state.visible}/>
+                        <SeekTime seekTimeUpdate={this.state.seekTimeUpdate}/>
+                        <BottomMenus menusUpdate={this.state.menusUpdate}/>
                     </View>
 
                 </ResponderView>
@@ -140,6 +163,7 @@ class VideoPlayer extends React.PureComponent {
         )
     }
 
+    /******************** video event *******************/
     onLoadStart=(e)=>{
     };
 
@@ -150,16 +174,23 @@ class VideoPlayer extends React.PureComponent {
     };
 
     onProgress=(e)=>{
-        this.state.sliderAutoEnable&&this.setState({currentTime:e.currentTime,seekTime:e.currentTime});
+        this.state.sliderAutoEnable&&this.setState({currentTime:e.currentTime});
         this.setState({playableDuration:e.playableDuration})
     };
 
-    onCurrentTimeProgress=(value)=>{
-        this.setState({sliderAutoEnable:false,seekTime:value});
+    onPaused=()=>{
+        let paused = this.state.paused;
+        this.setState({paused:!paused})
     };
 
-    onSlidingComplete=(value)=>{
-        this.setState({sliderAutoEnable:true,currentTime:value,seekTime:value});
+    onCurrentTimeProgress=async (value)=>{
+        this.showMenusComponent();
+        await this.setState({sliderAutoEnable:false,currentTime_copy:value})
+    };
+
+    onSlidingComplete=async (value)=>{
+        this.refs.player.seek(value);
+        await this.setState({sliderAutoEnable:true,currentTime:value,currentTime_copy:value})
     }
 }
 
@@ -211,28 +242,20 @@ class CenterMenus extends AnimatedComponent {
 }
 
 class TopMenus extends AnimatedComponent {
-    constructor(props){
-        super(props);
-        this.state={
-            loadable:false
-        };
-    }
-
     componentWillUpdate(nextProps, nextState, nextContext) {
-        this.setState({loadable:true});
-        this.animate(2000)
+        this.animate(3000)
     }
 
     render(){
         return (
             <MenusContext.Consumer>
                 {({state, props}) =>
-                    this.state.loadable && <Animated.View style={[styles.topMenusContainer,this.Appear,this.Disappear]}>
+                    <Animated.View style={[styles.topMenusContainer,this.Appear,this.Disappear]}>
                         {typeof props.renderTopMenus === 'function' ?
 
                             props.renderTopMenus(state, props):
 
-                            <View style={{height:30,backgroundColor:'red'}}>
+                            <View style={{height:30,backgroundColor:'black',opacity:0.5}}>
 
                             </View>
                         }
@@ -244,10 +267,8 @@ class TopMenus extends AnimatedComponent {
 }
 
 class BottomMenus extends AnimatedComponent {
-    constructor(props){
-        super(props);
-        this.state={
-        };
+    componentWillUpdate(nextProps, nextState, nextContext) {
+        this.animate(3000)
     }
 
     render(){
@@ -255,13 +276,17 @@ class BottomMenus extends AnimatedComponent {
             <MenusContext.Consumer>
                 {({state, props}) =>
                     <React.Fragment>
-                        <View>
+                        <Animated.View style={[this.Appear,this.Disappear]}>
+
                             {typeof props.renderBottomMenus === 'function' ?
 
                                 props.renderBottomMenus(state, props):
 
                                 <View style={{height:30,backgroundColor:'transparent',flexDirection:'row',alignItems:'center'}}>
-                                    <Image source={require('./assets/icon.png')} style={{width:15}} resizeMode={'contain'} />
+
+                                    <TouchableOpacity style={{paddingHorizontal:10}} onPress={props.onPaused}>
+                                        <Image source={require('./assets/icon.png')} style={{width:15}} resizeMode={'contain'} />
+                                    </TouchableOpacity>
 
                                     {/********** seek bar **********/}
                                     <View style={{flex:1,justifyContent:'center',backgroundColor:'transparent'}}>
@@ -279,7 +304,7 @@ class BottomMenus extends AnimatedComponent {
                                         {/********** currentTime **********/}
                                         <Slider style={{flex:1}}
                                                 // step={1}
-                                                value={state.sliderAutoEnable?state.currentTime:state.seekTime}
+                                                value={state.currentTime}
                                                 maximumValue={state.duration}
                                                 minimumTrackTintColor={'pink'}
                                                 maximumTrackTintColor={'gray'}
@@ -292,13 +317,15 @@ class BottomMenus extends AnimatedComponent {
                                     </View>
 
                                     <View style={{flexDirection:'row',alignItems:'center',}}>
-                                        <Text style={{color:'white'}}>{formatTime(state.currentTime)}</Text>
+                                        <Text style={{color:'white'}}>{formatTime(state.sliderAutoEnable?state.currentTime:state.currentTime_copy)}</Text>
                                         <Text style={{color:'white'}}>/</Text>
                                         <Text style={{color:'white'}}>{formatTime(state.duration)}</Text>
                                     </View>
+
+                                    <View style={{position:'absolute',width:'100%',height:'100%',backgroundColor:'black',opacity:0.5,zIndex:-1}}/>
                                 </View>
                             }
-                        </View>
+                        </Animated.View>
                         {Platform.OS==='android'?
                             <ProgressBarAndroid styleAttr="Horizontal" indeterminate={false} progress={state.currentTime/state.duration} color={'pink'} style={{height:3}}/>
                             :
@@ -329,8 +356,17 @@ class SeekTime extends AnimatedComponent {
         return (
             <MenusContext.Consumer>
                 {({state, props}) =>
-                    this.state.loadable && <Animated.View style={[styles.seekTimeModal,this.Appear,this.Disappear]}>
-                        <Text style={{color:'#000'}}>{formatTime(state.seekTime)}</Text>
+                    <Animated.View style={[this.Appear,this.Disappear,{flexDirection:'row'}]}>
+                        {typeof props.renderSeekTime === 'function' ?
+
+                            props.renderSeekTime(state, props):
+
+                            this.state.loadable && <View style={styles.seekTimeModal}>
+                                <Text style={{color:'white'}}>{formatTime(state.currentTime)}</Text>
+                                <Text style={{color:'white'}}>/</Text>
+                                <Text style={{color:'white'}}>{formatTime(state.duration)}</Text>
+                            </View>}
+                            <View style={{flex:1}}/>
                     </Animated.View>
                 }
             </MenusContext.Consumer>
@@ -338,10 +374,6 @@ class SeekTime extends AnimatedComponent {
 
     }
 }
-
-// TopMenus.contextType = MenusContext;
-// BottomMenus.contextType = MenusContext;
-// CenterMenus.contextType = MenusContext;
 
 const styles = StyleSheet.create({
     container:{
@@ -393,9 +425,10 @@ const styles = StyleSheet.create({
 
     //seek time modal
     seekTimeModal:{
-        width:200,
-        height:30,
-        backgroundColor:'red'
+        backgroundColor:'black',
+        flexDirection:'row',
+        alignItems:'center',
+        paddingHorizontal:5
     }
 });
 
