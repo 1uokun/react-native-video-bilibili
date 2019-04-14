@@ -9,7 +9,8 @@ import {
     ProgressBarAndroid,
     ProgressViewIOS,
     Slider,
-    TouchableOpacity
+    TouchableOpacity,
+    Dimensions
 } from 'react-native'
 import ResponderView from './lib/ResponderView'
 import AnimatedComponent from './lib/AnimatedComponent'
@@ -24,7 +25,11 @@ class VideoPlayer extends React.PureComponent {
         renderTopMenus:null,
         renderBottomMenus:null,
         renderSeekTime:null,
-        volume:100,
+        renderLoading:null,
+        setFullScreen:Function(),
+        setNavigator:Function(),
+        setSetting:Function(),
+        volume:0,
         paused:false,
         currentTime:0,
     };
@@ -32,9 +37,14 @@ class VideoPlayer extends React.PureComponent {
     constructor(props){
         super(props);
         this.state={
-            sliderAutoEnable:false,
-            seekTimeUpdate:true,
-            menusUpdate:true,
+            ORIENTATION:'PORTRAIT',
+            fullscreenWidth:0,
+            fullscreenHeight:0,
+
+            pointerEvents:'none',
+
+            //shouldComponentUpdate
+            sliderAutoEnable:true,
 
             //video props
             volume:this.props.volume,
@@ -43,48 +53,68 @@ class VideoPlayer extends React.PureComponent {
             playableDuration:0,
             currentTime:this.props.currentTime,
             currentTime_copy:0,
-        }
+            isBuffering:true,
+        };
     }
+
+
+
+
+
+    /******************** life cycle *******************/
+    componentDidMount() {
+        this.onOrientationChange(Dimensions.get('window'));
+        Dimensions.addEventListener('change', (e) => {
+            const { width, height } = e.window;
+            this.onOrientationChange({width, height});
+        })
+    }
+
+
+
+
 
     /******************** responder event *******************/
     _handleSingleTouch=()=>{
-        this.showMenusComponent()
+        this.toggleMenusComponent()
     };
 
     _handleDoubleTouch=()=>{
-        this.onPaused()
+        this.setPaused()
     };
 
-    _handleLeftAndRightMove=async (offset,percent)=>{
+    _handleLeftAndRightMove=async (offset)=>{
 
-        //force update in SeekTime component
-        this.showSerkTimerComponent();
+        //show component when touch move
+        this.showSeekTimerComponent();
         this.showMenusComponent();
 
         //update currentTime
         let duration = this.state.duration;
         let currentTime = this.state.currentTime;
+
         currentTime+=offset;
         if(currentTime<0){
-            await this.setState({currentTime:0})
+            await this.setState({currentTime:0});
         }else if(currentTime>duration){
-            await this.setState({currentTime:duration})
+            await this.setState({currentTime:duration});
         }else {
-            await this.setState({currentTime:currentTime})
+            await this.setState({currentTime:currentTime});
         }
 
-        this.onCurrentTimeProgress(this.state.currentTime);
+        this.onCurrentTimeProgress(Math.floor(this.state.currentTime))
+
     };
 
     _handleLeftAndRightMoveComplete=async ()=>{
-        this.onSlidingComplete(this.state.currentTime)
+        await this.onSlidingComplete(this.state.currentTime)
     };
 
-    _handleUpAndDownMoveInLeft=(offset,percent)=>{
-        console.log('light control',offset,percent)
+    _handleUpAndDownMoveInLeft=(offset)=>{
+        console.log('light control',offset)
     };
 
-    _handleUpAndDownMoveInRight=(offset,percent)=>{
+    _handleUpAndDownMoveInRight=(offset)=>{
         let volume = this.state.volume;
         volume+=offset;
         if(volume<0){
@@ -98,18 +128,34 @@ class VideoPlayer extends React.PureComponent {
         }
     };
 
+
+
+
+
     /******************** custom event *******************/
-    showSerkTimerComponent=()=>{
-        let seekTimeUpdate = this.state.seekTimeUpdate;
-        this.setState({seekTimeUpdate:!seekTimeUpdate});
+    showSeekTimerComponent=()=>{
+        this.refs._seekTime.show();
     };
     showMenusComponent=()=>{
-        let menusUpdate = this.state.menusUpdate;
-        this.setState({menusUpdate:!menusUpdate});
+        this.refs._topMenus.show();
+        this.refs._bottomMenus.show();
+    };
+    toggleMenusComponent=()=>{
+        this.refs._topMenus.toggle();
+        this.refs._bottomMenus.toggle();
+    };
+
+    onOrientationChange =({width,height})=>{
+        if(width>height){
+            this.setState({ORIENTATION:'LANDSCAPE',fullscreenWidth:width,fullscreenHeight:height})
+        }else {
+            this.setState({ORIENTATION:'PORTRAIT'})
+        }
     };
 
 
     render(){
+        const {ORIENTATION,fullscreenWidth,fullscreenHeight,pointerEvents,isBuffering} = this.state;
         return (
             <MenusContext.Provider value={{
                 state:this.state,
@@ -117,25 +163,25 @@ class VideoPlayer extends React.PureComponent {
                     ...this.props,
                     onCurrentTimeProgress:this.onCurrentTimeProgress,
                     onSlidingComplete:this.onSlidingComplete,
-                    onPaused:this.onPaused
+                    setPaused:this.setPaused
                 },
             }}>
-            <View ref={'container'}
-                  style={styles.container}
-            >
+            <View style={[ORIENTATION==='PORTRAIT'?styles.container:{position:'absolute',width:fullscreenWidth,height:fullscreenHeight,zIndex:999,backgroundColor:'black'},this.props.containerStyle]}>
                 <Video
                     {...this.props}
-                    ref={'player'}
-                    source={{uri: "http://v.ysbang.cn/data/video/2015/rkb/2015rkb01.mp4"}}
-                    // source={{uri: "http://www.w3school.com.cn/example/html5/mov_bbb.mp4"}}
+                    ref={c => {
+                        this._root = c
+                    }}
                     style={{width:'100%',height:'100%',position:'absolute'}}
                     volume={this.state.volume/100}
                     paused={this.state.paused}
-                    onLoadStart={ this.onLoadStart }
                     onLoad={  this.onLoad }
+                    onBuffer={ this.onBuffer }
                     onProgress={  this.onProgress }
+                    hideShutterView={false}
                 />
                 <ResponderView
+                    pointerEvents={pointerEvents}
                     handleSingleTouch={this._handleSingleTouch}
                     handleDoubleTouch={this._handleDoubleTouch}
                     handleLeftAndRightMove={this._handleLeftAndRightMove}
@@ -143,18 +189,22 @@ class VideoPlayer extends React.PureComponent {
                     handleUpAndDownMoveInLeft={this._handleUpAndDownMoveInLeft}
                     handleUpAndDownMoveInRight={this._handleUpAndDownMoveInRight}
                 >
+                    {/********** loading **********/}
+
+                        {isBuffering&&<Loading />}
+
                     {/********** center menus **********/}
 
                         <CenterMenus volume={this.state.volume}/>
 
                     {/********** top menus **********/}
 
-                        <TopMenus menusUpdate={this.state.menusUpdate}/>
+                        <TopMenus ref={'_topMenus'} />
 
                     {/********** bottom menus **********/}
-                    <View style={[styles.bottomMenusContainer,{opacity:1}]}>
-                        <SeekTime seekTimeUpdate={this.state.seekTimeUpdate}/>
-                        <BottomMenus menusUpdate={this.state.menusUpdate}/>
+                    <View style={styles.bottomMenusContainer}>
+                        <SeekTime ref={'_seekTime'} />
+                        <BottomMenus ref={'_bottomMenus'} />
                     </View>
 
                 </ResponderView>
@@ -164,55 +214,60 @@ class VideoPlayer extends React.PureComponent {
     }
 
     /******************** video event *******************/
-    onLoadStart=(e)=>{
-    };
-
     onLoad=async (e)=>{
         await this.setState({
             duration:e.duration,
-        })
+        });
+        this.state.pointerEvents!=='auto'&&this.setState({pointerEvents:'auto'})
+    };
+
+    onBuffer=(e)=>{
+        this.setState({isBuffering:e.isBuffering})
     };
 
     onProgress=(e)=>{
         this.state.sliderAutoEnable&&this.setState({currentTime:e.currentTime});
-        this.setState({playableDuration:e.playableDuration})
+        this.setState({playableDuration:e.playableDuration});
     };
 
-    onPaused=()=>{
+    setPaused=()=>{
         let paused = this.state.paused;
         this.setState({paused:!paused})
     };
 
-    onCurrentTimeProgress=async (value)=>{
+    onCurrentTimeProgress=(value)=>{
         this.showMenusComponent();
-        await this.setState({sliderAutoEnable:false,currentTime_copy:value})
+        this.setState({sliderAutoEnable:false,currentTime_copy:value})
     };
 
     onSlidingComplete=async (value)=>{
-        this.refs.player.seek(value);
-        await this.setState({sliderAutoEnable:true,currentTime:value,currentTime_copy:value})
+        await this.setState({currentTime:value});
+
+        //video seek appointed time
+        this._root.seek(value);
+
+        setTimeout(()=>{
+            this.setState({sliderAutoEnable:true})
+        },0)
     }
 }
 
+/**
+ * CenterMenus
+ * @props renderCenterMenus
+ * **/
 class CenterMenus extends AnimatedComponent {
-    constructor(props){
-        super(props);
-        this.state={
-            loadable:false
-        };
-    }
 
     componentWillUpdate(nextProps, nextState, nextContext) {
-        this.setState({loadable:true});
-        this.animate()
+        this.show()
     }
 
     render(){
         return (
             <MenusContext.Consumer>
                 {({state, props}) =>
-                    this.state.loadable && <Animated.View
-                        style={[styles.centerMenusContainer,this.Appear,this.Disappear]}>
+                    <Animated.View
+                        style={[styles.centerMenusContainer,{opacity:this.opacityAnimate}]}>
                         {typeof props.renderCenterMenus === 'function' ?
 
                             props.renderCenterMenus(state, props) :
@@ -223,7 +278,7 @@ class CenterMenus extends AnimatedComponent {
                                     position: 'absolute',
                                     backgroundColor: '#000000'
                                 }]}/>
-                                <Image source={require('./assets/icon.png')} style={{width: 20, marginHorizontal: 10}}
+                                <Image source={state.volume>1?require('./assets/volume-up-outline.png'):require('./assets/volume-off-outline.png')} style={{width: 20, marginHorizontal: 10}}
                                        resizeMode={'contain'}/>
                                 <View style={styles.progress}>
                                     {Platform.OS==='android'?
@@ -241,22 +296,28 @@ class CenterMenus extends AnimatedComponent {
     }
 }
 
+/**
+ * TopMenus
+ * @props renderTopMenus
+ * **/
 class TopMenus extends AnimatedComponent {
-    componentWillUpdate(nextProps, nextState, nextContext) {
-        this.animate(3000)
-    }
-
     render(){
         return (
             <MenusContext.Consumer>
                 {({state, props}) =>
-                    <Animated.View style={[styles.topMenusContainer,this.Appear,this.Disappear]}>
+                    <Animated.View style={[styles.topMenusContainer,{opacity:this.opacityAnimate}]}>
                         {typeof props.renderTopMenus === 'function' ?
 
                             props.renderTopMenus(state, props):
 
-                            <View style={{height:30,backgroundColor:'black',opacity:0.5}}>
-
+                            <View style={{height:50,backgroundColor:'transparent',flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+                                    <TouchableOpacity style={{paddingHorizontal:20}} onPress={props.setNavigator}>
+                                        <Image source={require('./assets/back.png')} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={{paddingHorizontal:20}} onPress={props.setSetting}>
+                                        <Image source={require('./assets/dots.png')} />
+                                    </TouchableOpacity>
+                                <View style={{position:'absolute',width:'100%',height:'100%',backgroundColor:'black',opacity:0.5,zIndex:-1}}/>
                             </View>
                         }
                     </Animated.View>
@@ -266,26 +327,25 @@ class TopMenus extends AnimatedComponent {
     }
 }
 
+/**
+ * BottomMenus
+ * @props renderBottomMenus
+ * **/
 class BottomMenus extends AnimatedComponent {
-    componentWillUpdate(nextProps, nextState, nextContext) {
-        this.animate(3000)
-    }
-
     render(){
         return (
             <MenusContext.Consumer>
                 {({state, props}) =>
                     <React.Fragment>
-                        <Animated.View style={[this.Appear,this.Disappear]}>
-
+                        <Animated.View style={{opacity:this.opacityAnimate}}>
                             {typeof props.renderBottomMenus === 'function' ?
 
                                 props.renderBottomMenus(state, props):
 
-                                <View style={{height:30,backgroundColor:'transparent',flexDirection:'row',alignItems:'center'}}>
+                                <View style={{height:50,backgroundColor:'transparent',flexDirection:'row',alignItems:'center'}}>
 
-                                    <TouchableOpacity style={{paddingHorizontal:10}} onPress={props.onPaused}>
-                                        <Image source={require('./assets/icon.png')} style={{width:15}} resizeMode={'contain'} />
+                                    <TouchableOpacity style={{paddingHorizontal:20}} onPress={props.setPaused}>
+                                        <Image source={state.paused?require('./assets/play.png'):require('./assets/pause.png')} />
                                     </TouchableOpacity>
 
                                     {/********** seek bar **********/}
@@ -304,10 +364,10 @@ class BottomMenus extends AnimatedComponent {
                                         {/********** currentTime **********/}
                                         <Slider style={{flex:1}}
                                                 // step={1}
-                                                value={state.currentTime}
+                                                value={Math.floor(state.currentTime)}
                                                 maximumValue={state.duration}
                                                 minimumTrackTintColor={'pink'}
-                                                maximumTrackTintColor={'gray'}
+                                                maximumTrackTintColor={'white'}
                                                 thumbTintColor={'pink'}
                                                 thumbStyle={{backgroundColor:'red'}}
                                                 thumbImage={require('./assets/icon_bilibili.png')}
@@ -321,6 +381,10 @@ class BottomMenus extends AnimatedComponent {
                                         <Text style={{color:'white'}}>/</Text>
                                         <Text style={{color:'white'}}>{formatTime(state.duration)}</Text>
                                     </View>
+
+                                    <TouchableOpacity style={{paddingHorizontal:20,backgroundColor:'transparent'}} onPress={props.setFullScreen}>
+                                        <Image source={state.ORIENTATION==='PORTRAIT'?require('./assets/fullscreen.png'):require('./assets/fullscreen-exit.png')} />
+                                    </TouchableOpacity>
 
                                     <View style={{position:'absolute',width:'100%',height:'100%',backgroundColor:'black',opacity:0.5,zIndex:-1}}/>
                                 </View>
@@ -339,29 +403,21 @@ class BottomMenus extends AnimatedComponent {
 }
 
 
+/**
+ * SeekTime
+ * @props renderSeekTime
+ * **/
 class SeekTime extends AnimatedComponent {
-    constructor(props){
-        super(props);
-        this.state={
-            loadable:false
-        };
-    }
-
-    componentWillUpdate(nextProps, nextState, nextContext) {
-        this.setState({loadable:true});
-        this.animate()
-    }
-
     render(){
         return (
             <MenusContext.Consumer>
                 {({state, props}) =>
-                    <Animated.View style={[this.Appear,this.Disappear,{flexDirection:'row'}]}>
+                    <Animated.View style={{opacity:this.opacityAnimate}}>
                         {typeof props.renderSeekTime === 'function' ?
 
                             props.renderSeekTime(state, props):
 
-                            this.state.loadable && <View style={styles.seekTimeModal}>
+                            <View style={styles.seekTimeModal}>
                                 <Text style={{color:'white'}}>{formatTime(state.currentTime)}</Text>
                                 <Text style={{color:'white'}}>/</Text>
                                 <Text style={{color:'white'}}>{formatTime(state.duration)}</Text>
@@ -375,19 +431,47 @@ class SeekTime extends AnimatedComponent {
     }
 }
 
+
+/**
+ * Loading Component
+ * **/
+class Loading extends React.Component {
+    render(){
+        return (
+            <MenusContext.Consumer>
+                {({state, props}) =>
+                    <View style={styles.centerMenusContainer}>
+                        {typeof props.renderLoading === 'function' ?
+
+                            props.renderLoading(state, props) :
+
+                            <React.Fragment>
+                                <Image source={require('./assets/acfun.png')} resizeMode={'contain'}/>
+                                <Text style={{color: '#FFFFFF'}}>正在缓冲...</Text>
+                            </React.Fragment>
+                        }
+                    </View>
+                }
+            </MenusContext.Consumer>
+        )
+    }
+}
+
 const styles = StyleSheet.create({
     container:{
         width:'100%',
         height:'33%',
         minHeight: 200,
-        backgroundColor:'#000'
+        backgroundColor:'transparent'
     },
+
     // center menus
     centerMenusContainer:{
         position:'absolute',
         width:'100%',
         height:'100%',
-        justifyContent:'center'
+        justifyContent:'center',
+        alignItems:'center'
     },
     modal:{
         alignSelf:'center',
@@ -420,7 +504,7 @@ const styles = StyleSheet.create({
     //bottom menus
     bottomMenusContainer:{
         flex:1,
-        justifyContent: 'flex-end',
+        justifyContent: 'flex-end'
     },
 
     //seek time modal
