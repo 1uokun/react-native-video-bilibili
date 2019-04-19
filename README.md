@@ -8,10 +8,10 @@ npm install git+https://git@github.com/1uokun/react-native-video-bilibili.git
 ```
 
 ### Screenshot
-<img src="https://github.com/1uokun/react-native-video-bilibili/blob/master/screenshot/overview.png">
+<img src="https://github.com/1uokun/react-native-video-bilibili/blob/master/screenshot/overview.gif" style="width:40%">
 
 ### UX exploded view
-waiting...
+<img src="https://github.com/1uokun/react-native-video-bilibili/blob/master/screenshot/ux.png" style="width:40%">
 
 ## Usage
 
@@ -46,42 +46,43 @@ import Video from 'react-native-video-bilibili';
     ##### state props
     Pass all `state` and external `props` of the parent component`<Provider>` to the child component`<Consumer>` based on [context API][4]
 
-**Provider**
-```jsx harmony
-<Provider value={{
-    state:this.state,
-    props:{
-        ...this.props,
-        onCurrentTimeProgress:this.onCurrentTimeProgress,
-        onSlidingComplete:this.onSlidingComplete,
-        setPaused:this.setPaused
-    },
-}}>
-</Provider>
-```
-
-**Consumer**
-```jsx harmony
-<Consumer>
-    {({state, props}) =>
-        <Animated.View>
-            {props.renderCenterMenus(state, props)}
-        </Animated.View>
-    }
-</Consumer>
-```
+    **Provider**
+    ```jsx harmony
+    <Provider value={{
+        state:this.state,
+        props:{
+            ...this.props,
+            onCurrentTimeProgress:this.onCurrentTimeProgress,
+            onSlidingComplete:this.onSlidingComplete,
+            setPaused:this.setPaused
+        },
+    }}>
+    </Provider>
+    ```
+    
+    **Consumer**
+    ```jsx harmony
+    <Consumer>
+        {({state, props}) =>
+            <Animated.View>
+                {props.renderCenterMenus(state, props)}
+            </Animated.View>
+        }
+    </Consumer>
+    ```
 ## Event props
  - [...video.props][2]
  - setFullScreen()
  - setNavigator()
  - setSetting()
  
-### Direct Manipulation
+### Ref Direct Manipulation
  - [...video methods][3]
     ```javascript
        this.player._root.doSth()
     ```
  - setPaused()
+    
  - showMenusComponent()
  - showSeekTimerComponent()
  - onOrientationChange({width,height})
@@ -90,7 +91,8 @@ import Video from 'react-native-video-bilibili';
 
 #### 1.0
 
- - [x] Gesture Responder System
+ - [x] [Gesture Responder System][5]
+ - [x] [Animated Component][6]
  - [x] Menus Component
  - [x] Loading Component
  
@@ -109,3 +111,5 @@ import Video from 'react-native-video-bilibili';
   [2]: https://github.com/react-native-community/react-native-video#event-props
   [3]: https://github.com/react-native-community/react-native-video#methods-1
   [4]: https://reactjs.org/docs/context.html
+  [5]: https://github.com/1uokun/react-native-video-bilibili/blob/master/lib/ResponderView.js
+  [6]: https://github.com/1uokun/react-native-video-bilibili/blob/master/lib/AnimatedComponent.js
