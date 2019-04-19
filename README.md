@@ -91,8 +91,8 @@ import Video from 'react-native-video-bilibili';
 
 #### 1.0
 
- - [x] [Gesture Responder System][5]
- - [x] [Animated Component][6]
+ - [x] [Gesture Responder System][5]👆
+ - [x] [Animated Component][6]🏄
  - [x] Menus Component
  - [x] Loading Component
  
