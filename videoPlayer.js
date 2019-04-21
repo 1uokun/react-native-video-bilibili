@@ -305,7 +305,7 @@ class TopMenus extends AnimatedComponent {
         return (
             <MenusContext.Consumer>
                 {({state, props}) =>
-                    <Animated.View style={[styles.topMenusContainer,{opacity:this.opacityAnimate}]}>
+                    <Animated.View style={[this.slideDown,styles.topMenusContainer]}>
                         {typeof props.renderTopMenus === 'function' ?
 
                             props.renderTopMenus(state, props):
@@ -337,7 +337,7 @@ class BottomMenus extends AnimatedComponent {
             <MenusContext.Consumer>
                 {({state, props}) =>
                     <React.Fragment>
-                        <Animated.View style={{opacity:this.opacityAnimate}}>
+                        <Animated.View style={this.slideUp}>
                             {typeof props.renderBottomMenus === 'function' ?
 
                                 props.renderBottomMenus(state, props):
