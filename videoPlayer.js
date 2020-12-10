@@ -29,7 +29,8 @@ class VideoPlayer extends React.PureComponent {
         setFullScreen:Function(),
         setNavigator:Function(),
         setSetting:Function(),
-        volume:0,
+        children:Function(),
+        volume:1,
         paused:false,
         currentTime:0,
     };
@@ -47,6 +48,7 @@ class VideoPlayer extends React.PureComponent {
             sliderAutoEnable:true,
 
             //video props
+            muted:this.props.muted,
             volume:this.props.volume,
             paused:this.props.paused,
             duration:0,
@@ -116,15 +118,13 @@ class VideoPlayer extends React.PureComponent {
 
     _handleUpAndDownMoveInRight=(offset)=>{
         let volume = this.state.volume;
-        volume+=offset;
-        if(volume<0){
-            this.setState({volume:1});//don't ask me why
-            this.setState({volume:0})
-        }else if(volume>100){
-            this.setState({volume:99});
-            this.setState({volume:100})
+        volume+=offset/100;
+        if(volume<=0){
+            this.setState({volume:0,muted:true})
+        }else if(volume>1){
+            this.setState({volume:1,muted:false});
         }else {
-            this.setState({volume:volume})
+            this.setState({volume:volume,muted:false})
         }
     };
 
@@ -155,7 +155,8 @@ class VideoPlayer extends React.PureComponent {
 
 
     render(){
-        const {ORIENTATION,fullscreenWidth,fullscreenHeight,pointerEvents,isBuffering} = this.state;
+        const {ORIENTATION,fullscreenWidth,fullscreenHeight,pointerEvents,isBuffering,paused} = this.state;
+        const {children,controls} = this.props;
         return (
             <MenusContext.Provider value={{
                 state:this.state,
@@ -166,21 +167,22 @@ class VideoPlayer extends React.PureComponent {
                     setPaused:this.setPaused
                 },
             }}>
-            <View style={[ORIENTATION==='PORTRAIT'?styles.container:{position:'absolute',width:fullscreenWidth,height:fullscreenHeight,zIndex:999,backgroundColor:'black'},this.props.containerStyle]}>
+            <View style={[ORIENTATION==='PORTRAIT'?this.props.containerStyle:{position:'absolute',width:fullscreenWidth,height:fullscreenHeight,zIndex:999,backgroundColor:'black'},styles.container]}>
                 <Video
+                    style={{width:'100%',height:'100%',position:'absolute'}}
                     {...this.props}
                     ref={c => {
                         this._root = c
                     }}
-                    style={{width:'100%',height:'100%',position:'absolute'}}
-                    volume={this.state.volume/100}
+                    muted={this.state.muted}
+                    volume={this.state.volume}
                     paused={this.state.paused}
                     onLoad={  this.onLoad }
                     onBuffer={ this.onBuffer }
                     onProgress={  this.onProgress }
                     hideShutterView={false}
                 />
-                <ResponderView
+                {!controls&&<ResponderView
                     pointerEvents={pointerEvents}
                     handleSingleTouch={this._handleSingleTouch}
                     handleDoubleTouch={this._handleDoubleTouch}
@@ -191,7 +193,7 @@ class VideoPlayer extends React.PureComponent {
                 >
                     {/********** loading **********/}
 
-                        {isBuffering&&<Loading />}
+                        {isBuffering&&!paused&&<Loading />}
 
                     {/********** center menus **********/}
 
@@ -207,7 +209,12 @@ class VideoPlayer extends React.PureComponent {
                         <BottomMenus ref={'_bottomMenus'} />
                     </View>
 
-                </ResponderView>
+                    {/********** custom view **********/}
+                    <MenusContext.Consumer>
+                        {children}
+                    </MenusContext.Consumer>
+
+                </ResponderView>}
             </View>
             </MenusContext.Provider>
         )
@@ -278,13 +285,13 @@ class CenterMenus extends AnimatedComponent {
                                     position: 'absolute',
                                     backgroundColor: '#000000'
                                 }]}/>
-                                <Image source={state.volume>1?require('./assets/volume-up-outline.png'):require('./assets/volume-off-outline.png')} style={{width: 20, marginHorizontal: 10}}
+                                <Image source={state.muted?require('./assets/volume-off-outline.png'):require('./assets/volume-up-outline.png')} style={{width: 20, marginHorizontal: 10}}
                                        resizeMode={'contain'}/>
                                 <View style={styles.progress}>
                                     {Platform.OS==='android'?
-                                        <ProgressBarAndroid styleAttr="Horizontal" indeterminate={false} progress={state.volume/100} color={'pink'} style={{height:2}}/>
+                                        <ProgressBarAndroid styleAttr="Horizontal" indeterminate={false} progress={state.volume} color={'pink'} style={{height:2}}/>
                                         :
-                                        <ProgressViewIOS trackTintColor="#FFFFFF" progressTintColor="pink" progress={state.volume/100} style={{height:2}}/>
+                                        <ProgressViewIOS trackTintColor="#FFFFFF" progressTintColor="pink" progress={state.volume} style={{height:2}}/>
                                     }
                                 </View>
                             </View>
@@ -391,9 +398,9 @@ class BottomMenus extends AnimatedComponent {
                             }
                         </Animated.View>
                         {Platform.OS==='android'?
-                            <ProgressBarAndroid styleAttr="Horizontal" indeterminate={false} progress={state.currentTime/state.duration} color={'pink'} style={{height:3}}/>
+                            <ProgressBarAndroid styleAttr="Horizontal" indeterminate={false} progress={!!state.duration?state.currentTime/state.duration:0} color={'pink'} style={{height:3}}/>
                             :
-                            <ProgressViewIOS trackTintColor="#FFFFFF" progressTintColor="pink" progress={state.currentTime/state.duration} style={{height:3}}/>
+                            <ProgressViewIOS trackTintColor="#FFFFFF" progressTintColor="pink" progress={!!state.duration?state.currentTime/state.duration:0} style={{height:3}}/>
                         }
                     </React.Fragment>
                 }
@@ -435,7 +442,7 @@ class SeekTime extends AnimatedComponent {
 /**
  * Loading Component
  * **/
-class Loading extends React.Component {
+class Loading extends React.PureComponent {
     render(){
         return (
             <MenusContext.Consumer>
@@ -459,10 +466,8 @@ class Loading extends React.Component {
 
 const styles = StyleSheet.create({
     container:{
-        width:'100%',
-        height:'33%',
-        minHeight: 200,
-        backgroundColor:'transparent'
+        backgroundColor:'transparent',
+        overflow:'hidden'
     },
 
     // center menus

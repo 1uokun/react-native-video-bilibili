@@ -33,6 +33,9 @@ import Video from 'react-native-video-bilibili';
  * style
    
    *react-native-video style*
+ * lock🔒
+ 
+   **🌟Lock all operations🌟**
  * [Custom Menus Component](#custom-menus-component)
     
     |Property|Type|Arguments|Description|
@@ -42,6 +45,7 @@ import Video from 'react-native-video-bilibili';
     |renderBottomMenus|node|[state,props](#state-props)|Components displayed in the bottom of the player, like seek bar or seek time control|
     |renderSeekTime|node|[state,props](#state-props)|Components displayed when you slide left and right, like show each frame of picture|
     |renderLoading|node|[state,props](#state-props)|Components displayed when video is buffering, like show buffering loading|
+    |children|function|[state,props](#state-props)|`({state,props})=>(<View></View>)`|
 
     ##### state props
     Pass all `state` and external `props` of the parent component`<Provider>` to the child component`<Consumer>` based on [context API][4]
@@ -98,6 +102,11 @@ import Video from 'react-native-video-bilibili';
  
 > if you accept `Link` the other library,please refer to 
 > https://github.com/abbasfreestyle/react-native-af-video-player
+
+#### 1.1
+
+ - [x] add `lock` props
+ - [x] add `children` props
 
 #### 2.0 Future features
 
