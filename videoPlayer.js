@@ -10,7 +10,8 @@ import {
     ProgressViewIOS,
     Slider,
     TouchableOpacity,
-    Dimensions
+    Dimensions,
+    Button
 } from 'react-native'
 import ResponderView from './lib/ResponderView'
 import AnimatedComponent from './lib/AnimatedComponent'
@@ -29,7 +30,6 @@ class VideoPlayer extends React.PureComponent {
         setFullScreen:Function(),
         setNavigator:Function(),
         setSetting:Function(),
-        children:Function(),
         volume:1,
         paused:false,
         currentTime:0,
@@ -56,6 +56,7 @@ class VideoPlayer extends React.PureComponent {
             currentTime:this.props.currentTime,
             currentTime_copy:0,
             isBuffering:true,
+            error:undefined
         };
     }
 
@@ -170,6 +171,7 @@ class VideoPlayer extends React.PureComponent {
             <View style={[ORIENTATION==='PORTRAIT'?this.props.containerStyle:{position:'absolute',width:fullscreenWidth,height:fullscreenHeight,zIndex:999,backgroundColor:'black'},styles.container]}>
                 <Video
                     style={{width:'100%',height:'100%',position:'absolute'}}
+                    hideShutterView={false}
                     {...this.props}
                     ref={c => {
                         this._root = c
@@ -178,9 +180,9 @@ class VideoPlayer extends React.PureComponent {
                     volume={this.state.volume}
                     paused={this.state.paused}
                     onLoad={  this.onLoad }
+                    onError={ this.onError }
                     onBuffer={ this.onBuffer }
                     onProgress={  this.onProgress }
-                    hideShutterView={false}
                 />
                 {!controls&&<ResponderView
                     pointerEvents={pointerEvents}
@@ -210,9 +212,9 @@ class VideoPlayer extends React.PureComponent {
                     </View>
 
                     {/********** custom view **********/}
-                    <MenusContext.Consumer>
+                    {!!children&&<MenusContext.Consumer>
                         {children}
-                    </MenusContext.Consumer>
+                    </MenusContext.Consumer>}
 
                 </ResponderView>}
             </View>
@@ -221,20 +223,29 @@ class VideoPlayer extends React.PureComponent {
     }
 
     /******************** video event *******************/
-    onLoad=async (e)=>{
-        await this.setState({
+    onLoad=(e)=>{
+        this.setState({
             duration:e.duration,
+        },()=>{
+            this.state.pointerEvents!=='auto'&&this.setState({pointerEvents:'auto'});
         });
-        this.state.pointerEvents!=='auto'&&this.setState({pointerEvents:'auto'})
+        this.props.onLoad(e)
+    };
+
+    onError=(e)=>{
+        this.setState({error:e});
+        this.props.onError(e)
     };
 
     onBuffer=(e)=>{
-        this.setState({isBuffering:e.isBuffering})
+        this.setState({isBuffering:e.isBuffering,error:undefined});
+        this.props.onBuffer(e)
     };
 
     onProgress=(e)=>{
         this.state.sliderAutoEnable&&this.setState({currentTime:e.currentTime});
         this.setState({playableDuration:e.playableDuration});
+        this.props.onProgress(e)
     };
 
     setPaused=()=>{
@@ -443,6 +454,10 @@ class SeekTime extends AnimatedComponent {
  * Loading Component
  * **/
 class Loading extends React.PureComponent {
+
+    onReplay(){
+        // UNDO: How to replay when android error (video unavailable)? #930
+    }
     render(){
         return (
             <MenusContext.Consumer>
@@ -452,10 +467,16 @@ class Loading extends React.PureComponent {
 
                             props.renderLoading(state, props) :
 
-                            <React.Fragment>
-                                <Image source={require('./assets/acfun.png')} resizeMode={'contain'}/>
-                                <Text style={{color: '#FFFFFF'}}>正在缓冲...</Text>
-                            </React.Fragment>
+                            !!state.error?
+                                <React.Fragment>
+                                    <Text style={{color: '#FFFFFF'}}>加载失败</Text>
+                                    <Button title={"重试"} onPress={this.onReplay.bind(this)} color={'pink'}/>
+                                </React.Fragment>
+                                :
+                                <React.Fragment>
+                                    <Image source={require('./assets/acfun.png')} resizeMode={'contain'}/>
+                                    <Text style={{color: '#FFFFFF'}}>正在缓冲...</Text>
+                                </React.Fragment>
                         }
                     </View>
                 }
