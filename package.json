@@ -16,8 +16,8 @@
   ],
   "author": "1498710037@qq.com",
   "license": "ISC",
-  "dependencies": {
-    "react-native-video": "latest"
+  "peerDependencies": {
+    "react-native-video": "4.x.x"
   },
   "bugs": {
     "url": "https://github.com/1uokun/react-native-video-bilibili/issues"
