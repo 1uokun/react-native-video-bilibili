@@ -10,7 +10,6 @@ import {
     ProgressViewIOS,
     Slider,
     TouchableOpacity,
-    Dimensions,
     Button
 } from 'react-native'
 import ResponderView from './lib/ResponderView'
@@ -22,14 +21,18 @@ const MenusContext = React.createContext({});
 
 class VideoPlayer extends React.PureComponent {
     static defaultProps = {
+        onLoad:function(){},
+        onError:function(){},
+        onBuffer:function(){},
+        onProgress:function(){},
         renderCenterMenus:null,
         renderTopMenus:null,
         renderBottomMenus:null,
         renderSeekTime:null,
         renderLoading:null,
-        setFullScreen:Function(),
-        setNavigator:Function(),
-        setSetting:Function(),
+        setFullScreen:function(){},
+        setNavigator:function(){},
+        setSetting:function(){},
         volume:1,
         paused:false,
         currentTime:0,
@@ -38,9 +41,7 @@ class VideoPlayer extends React.PureComponent {
     constructor(props){
         super(props);
         this.state={
-            ORIENTATION:'PORTRAIT',
-            fullscreenWidth:0,
-            fullscreenHeight:0,
+            orientation:'portrait',//landscape
 
             pointerEvents:'none',
 
@@ -64,14 +65,6 @@ class VideoPlayer extends React.PureComponent {
 
 
 
-    /******************** life cycle *******************/
-    componentDidMount() {
-        this.onOrientationChange(Dimensions.get('window'));
-        Dimensions.addEventListener('change', (e) => {
-            const { width, height } = e.window;
-            this.onOrientationChange({width, height});
-        })
-    }
 
 
 
@@ -146,17 +139,9 @@ class VideoPlayer extends React.PureComponent {
         this.refs._bottomMenus.toggle();
     };
 
-    onOrientationChange =({width,height})=>{
-        if(width>height){
-            this.setState({ORIENTATION:'LANDSCAPE',fullscreenWidth:width,fullscreenHeight:height})
-        }else {
-            this.setState({ORIENTATION:'PORTRAIT'})
-        }
-    };
-
 
     render(){
-        const {ORIENTATION,fullscreenWidth,fullscreenHeight,pointerEvents,isBuffering,paused} = this.state;
+        const {pointerEvents,isBuffering,paused} = this.state;
         const {children,controls} = this.props;
         return (
             <MenusContext.Provider value={{
@@ -168,14 +153,15 @@ class VideoPlayer extends React.PureComponent {
                     setPaused:this.setPaused
                 },
             }}>
-            <View style={[ORIENTATION==='PORTRAIT'?this.props.containerStyle:{position:'absolute',width:fullscreenWidth,height:fullscreenHeight,zIndex:999,backgroundColor:'black'},styles.container]}>
+            <View style={[styles.container,this.props.containerStyle]}>
                 <Video
-                    style={{width:'100%',height:'100%',position:'absolute'}}
+                    resizeMode={"contain"}
                     hideShutterView={false}
                     {...this.props}
                     ref={c => {
                         this._root = c
                     }}
+                    style={[{width:"100%"},this.props.style]}
                     muted={this.state.muted}
                     volume={this.state.volume}
                     paused={this.state.paused}
@@ -185,6 +171,7 @@ class VideoPlayer extends React.PureComponent {
                     onProgress={  this.onProgress }
                 />
                 {!controls&&<ResponderView
+                    style={styles.touchView}
                     pointerEvents={pointerEvents}
                     handleSingleTouch={this._handleSingleTouch}
                     handleDoubleTouch={this._handleDoubleTouch}
@@ -203,12 +190,12 @@ class VideoPlayer extends React.PureComponent {
 
                     {/********** top menus **********/}
 
-                        <TopMenus ref={'_topMenus'} />
+                        <TopMenus paused={this.state.paused} ref={'_topMenus'} />
 
                     {/********** bottom menus **********/}
                     <View style={styles.bottomMenusContainer}>
                         <SeekTime ref={'_seekTime'} />
-                        <BottomMenus ref={'_bottomMenus'} />
+                        <BottomMenus paused={this.state.paused} ref={'_bottomMenus'} />
                     </View>
 
                     {/********** custom view **********/}
@@ -226,6 +213,7 @@ class VideoPlayer extends React.PureComponent {
     onLoad=(e)=>{
         this.setState({
             duration:e.duration,
+            orientation:e.naturalSize&&e.naturalSize.orientation
         },()=>{
             this.state.pointerEvents!=='auto'&&this.setState({pointerEvents:'auto'});
         });
@@ -244,7 +232,7 @@ class VideoPlayer extends React.PureComponent {
 
     onProgress=(e)=>{
         this.state.sliderAutoEnable&&this.setState({currentTime:e.currentTime});
-        this.setState({playableDuration:e.playableDuration});
+        this.setState({playableDuration:e.playableDuration,isBuffering:false,error:undefined});
         this.props.onProgress(e)
     };
 
@@ -319,6 +307,11 @@ class CenterMenus extends AnimatedComponent {
  * @props renderTopMenus
  * **/
 class TopMenus extends AnimatedComponent {
+
+    componentWillUpdate(nextProps, nextState, nextContext) {
+        this.show()
+    }
+
     render(){
         return (
             <MenusContext.Consumer>
@@ -328,7 +321,7 @@ class TopMenus extends AnimatedComponent {
 
                             props.renderTopMenus(state, props):
 
-                            <View style={{height:50,backgroundColor:'transparent',flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+                            <View style={{height:50,marginTop:-30,backgroundColor:'transparent',flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
                                     <TouchableOpacity style={{paddingHorizontal:20}} onPress={props.setNavigator}>
                                         <Image source={require('./assets/back.png')} />
                                     </TouchableOpacity>
@@ -350,6 +343,11 @@ class TopMenus extends AnimatedComponent {
  * @props renderBottomMenus
  * **/
 class BottomMenus extends AnimatedComponent {
+
+    componentWillUpdate(nextProps, nextState, nextContext) {
+        this.show()
+    }
+
     render(){
         return (
             <MenusContext.Consumer>
@@ -401,7 +399,7 @@ class BottomMenus extends AnimatedComponent {
                                     </View>
 
                                     <TouchableOpacity style={{paddingHorizontal:20,backgroundColor:'transparent'}} onPress={props.setFullScreen}>
-                                        <Image source={state.ORIENTATION==='PORTRAIT'?require('./assets/fullscreen.png'):require('./assets/fullscreen-exit.png')} />
+                                        <Image source={state.orientation==='portrait'?require('./assets/fullscreen.png'):require('./assets/fullscreen-exit.png')} />
                                     </TouchableOpacity>
 
                                     <View style={{position:'absolute',width:'100%',height:'100%',backgroundColor:'black',opacity:0.5,zIndex:-1}}/>
@@ -440,7 +438,6 @@ class SeekTime extends AnimatedComponent {
                                 <Text style={{color:'white'}}>/</Text>
                                 <Text style={{color:'white'}}>{formatTime(state.duration)}</Text>
                             </View>}
-                            <View style={{flex:1}}/>
                     </Animated.View>
                 }
             </MenusContext.Consumer>
@@ -488,7 +485,15 @@ class Loading extends React.PureComponent {
 const styles = StyleSheet.create({
     container:{
         backgroundColor:'transparent',
-        overflow:'hidden'
+        overflow:'hidden',
+        justifyContent:'center',
+        alignItems:'center'
+    },
+    touchView:{
+        position:'absolute',
+        width:'100%',
+        height:'100%',
+        backgroundColor:'transparent'
     },
 
     // center menus
