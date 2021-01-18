@@ -1,6 +1,6 @@
 {
   "name": "react-native-video-bilibili",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "react-native-video二次开发视频播放器，交互设计参考bilibili",
   "main": "videoPlayer.js",
   "typings": "videoPlayer.d.ts",

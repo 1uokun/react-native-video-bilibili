@@ -1,10 +1,11 @@
-## react-native-video-bilibili`alpha`
+## react-native-video-bilibili
 📺react-native-video二次开发视频播放器，交互设计参考bilibili
 
 No link, no dependencies, only javascript
 
+## Install <a href="https://npmjs.org/package/react-native-video-bilibili"><img alt="npm version" src="http://img.shields.io/npm/v/react-native-video-bilibili.svg?style=flat-square"></a> <a href="https://npmjs.org/package/react-native-video-bilibili"><img alt="npm version" src="http://img.shields.io/npm/dm/react-native-video-bilibili.svg?style=flat-square"></a>
 ```bash
-npm install git+https://git@github.com/1uokun/react-native-video-bilibili.git
+npm install react-native-video-bilibili
 ```
 
 ### Screenshot
