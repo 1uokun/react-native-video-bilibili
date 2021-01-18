@@ -20,6 +20,7 @@ import Video from 'react-native-video-bilibili';
 
 <Video
     ref={'player'}
+    style={{width:"100%",height:300}}
     source={{uri: "https://media.w3.org/2010/05/sintel/trailer.mp4"}}
 />
 ```
@@ -33,6 +34,10 @@ import Video from 'react-native-video-bilibili';
  * style
    
    *react-native-video style*
+   
+ * styles
+ 
+   deep merge styles with [VideoPlayerStyles][7]
  * lock🔒
  
    **🌟Lock all operations🌟**
@@ -89,7 +94,7 @@ import Video from 'react-native-video-bilibili';
     
  - showMenusComponent()
  - showSeekTimerComponent()
- - onOrientationChange({width,height})
+ - <del>onOrientationChange({width,height})</del>
  
 ## Todo-list
 
@@ -122,3 +127,4 @@ import Video from 'react-native-video-bilibili';
   [4]: https://reactjs.org/docs/context.html
   [5]: https://github.com/1uokun/react-native-video-bilibili/blob/master/lib/ResponderView.js
   [6]: https://github.com/1uokun/react-native-video-bilibili/blob/master/lib/AnimatedComponent.js
+  [7]: https://github.com/1uokun/react-native-video-bilibili/blob/master/lib/style/index.js

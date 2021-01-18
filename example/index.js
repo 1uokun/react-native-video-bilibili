@@ -10,6 +10,8 @@ class Index extends React.Component {
                 {/****** video player components ******/}
                 <VideoPlayer
                     ref={'player'}
+                    styles={{container:[{backgroundColor:'gray'}]}}
+                    style={{height:300,width:'100%'}}
                     source={{uri: "https://media.w3.org/2010/05/sintel/trailer.mp4"}}
                 />
                 <View style={{flex:1,backgroundColor:'#FFFFFF'}}>

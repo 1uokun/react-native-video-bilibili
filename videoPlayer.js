@@ -3,7 +3,6 @@ import {
     View,
     Text,
     Image,
-    StyleSheet,
     Animated,
     Platform,
     ProgressBarAndroid,
@@ -14,8 +13,9 @@ import {
 } from 'react-native'
 import ResponderView from './lib/ResponderView'
 import AnimatedComponent from './lib/AnimatedComponent'
-import {formatTime} from './lib/util'
+import {formatTime,deepMergeStyle} from './lib/util'
 import Video from 'react-native-video'
+import {styles as VideoPlayerStyles} from "./lib/style";
 
 const MenusContext = React.createContext({});
 
@@ -152,8 +152,9 @@ class VideoPlayer extends React.PureComponent {
                     onSlidingComplete:this.onSlidingComplete,
                     setPaused:this.setPaused
                 },
+                styles:deepMergeStyle(VideoPlayerStyles,this.props.styles)
             }}>
-            <View style={[styles.container,this.props.containerStyle]}>
+            <View style={[VideoPlayerStyles.container,this.props.containerStyle]}>
                 <Video
                     resizeMode={"contain"}
                     hideShutterView={false}
@@ -161,7 +162,6 @@ class VideoPlayer extends React.PureComponent {
                     ref={c => {
                         this._root = c
                     }}
-                    style={[{width:"100%"},this.props.style]}
                     muted={this.state.muted}
                     volume={this.state.volume}
                     paused={this.state.paused}
@@ -171,7 +171,7 @@ class VideoPlayer extends React.PureComponent {
                     onProgress={  this.onProgress }
                 />
                 {!controls&&<ResponderView
-                    style={styles.touchView}
+                    style={VideoPlayerStyles.touchView}
                     pointerEvents={pointerEvents}
                     handleSingleTouch={this._handleSingleTouch}
                     handleDoubleTouch={this._handleDoubleTouch}
@@ -193,7 +193,7 @@ class VideoPlayer extends React.PureComponent {
                         <TopMenus paused={this.state.paused} ref={'_topMenus'} />
 
                     {/********** bottom menus **********/}
-                    <View style={styles.bottomMenusContainer}>
+                    <View style={VideoPlayerStyles.bottomMenusContainer}>
                         <SeekTime ref={'_seekTime'} />
                         <BottomMenus paused={this.state.paused} ref={'_bottomMenus'} />
                     </View>
@@ -271,7 +271,7 @@ class CenterMenus extends AnimatedComponent {
     render(){
         return (
             <MenusContext.Consumer>
-                {({state, props}) =>
+                {({state, props, styles}) =>
                     <Animated.View
                         style={[styles.centerMenusContainer,{opacity:this.opacityAnimate}]}>
                         {typeof props.renderCenterMenus === 'function' ?
@@ -315,7 +315,7 @@ class TopMenus extends AnimatedComponent {
     render(){
         return (
             <MenusContext.Consumer>
-                {({state, props}) =>
+                {({state, props, styles}) =>
                     <Animated.View style={[this.slideDown,styles.topMenusContainer]}>
                         {typeof props.renderTopMenus === 'function' ?
 
@@ -351,7 +351,7 @@ class BottomMenus extends AnimatedComponent {
     render(){
         return (
             <MenusContext.Consumer>
-                {({state, props}) =>
+                {({state, props, styles}) =>
                     <React.Fragment>
                         <Animated.View style={this.slideUp}>
                             {typeof props.renderBottomMenus === 'function' ?
@@ -427,7 +427,7 @@ class SeekTime extends AnimatedComponent {
     render(){
         return (
             <MenusContext.Consumer>
-                {({state, props}) =>
+                {({state, props, styles}) =>
                     <Animated.View style={{opacity:this.opacityAnimate}}>
                         {typeof props.renderSeekTime === 'function' ?
 
@@ -458,7 +458,7 @@ class Loading extends React.PureComponent {
     render(){
         return (
             <MenusContext.Consumer>
-                {({state, props}) =>
+                {({state, props, styles}) =>
                     <View style={styles.centerMenusContainer}>
                         {typeof props.renderLoading === 'function' ?
 
@@ -482,69 +482,5 @@ class Loading extends React.PureComponent {
     }
 }
 
-const styles = StyleSheet.create({
-    container:{
-        backgroundColor:'transparent',
-        overflow:'hidden',
-        justifyContent:'center',
-        alignItems:'center'
-    },
-    touchView:{
-        position:'absolute',
-        width:'100%',
-        height:'100%',
-        backgroundColor:'transparent'
-    },
-
-    // center menus
-    centerMenusContainer:{
-        position:'absolute',
-        width:'100%',
-        height:'100%',
-        justifyContent:'center',
-        alignItems:'center'
-    },
-    modal:{
-        alignSelf:'center',
-        flexDirection:'row',
-        alignItems:'center',
-        justifyContent:'space-around',
-        width:120,
-        height:40,
-        borderRadius:5,
-        backgroundColor:'transparent',
-    },
-    progress:{
-        flex:1,
-        marginRight:10,
-        // height:2,
-        backgroundColor:'white'
-    },
-    readProgress:{
-        position:'absolute',
-        height:2,
-        backgroundColor:'pink'
-    },
-
-    // top menus
-    topMenusContainer:{
-        flex:1,
-        justifyContent: 'flex-start'
-    },
-
-    //bottom menus
-    bottomMenusContainer:{
-        flex:1,
-        justifyContent: 'flex-end'
-    },
-
-    //seek time modal
-    seekTimeModal:{
-        backgroundColor:'black',
-        flexDirection:'row',
-        alignItems:'center',
-        paddingHorizontal:5
-    }
-});
 
 export default VideoPlayer
