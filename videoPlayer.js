@@ -159,6 +159,7 @@ class VideoPlayer extends React.PureComponent {
                     resizeMode={"contain"}
                     hideShutterView={false}
                     {...this.props}
+                    children={undefined}
                     ref={c => {
                         this._root = c
                     }}
