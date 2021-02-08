@@ -218,23 +218,31 @@ class VideoPlayer extends React.PureComponent {
         },()=>{
             this.state.pointerEvents!=='auto'&&this.setState({pointerEvents:'auto'});
         });
-        this.props.onLoad(e)
+        if(this.props.onLoad){
+            this.props.onLoad(e)
+        }
     };
 
     onError=(e)=>{
         this.setState({error:e});
-        this.props.onError(e)
+        if(this.props.onError){
+            this.props.onError(e)
+        }
     };
 
     onBuffer=(e)=>{
         this.setState({isBuffering:e.isBuffering,error:undefined});
-        this.props.onBuffer(e)
+        if(this.props.onBuffer){
+            this.props.onBuffer(e)
+        }
     };
 
     onProgress=(e)=>{
         this.state.sliderAutoEnable&&this.setState({currentTime:e.currentTime});
         this.setState({playableDuration:e.playableDuration,isBuffering:false,error:undefined});
-        this.props.onProgress(e)
+        if(this.props.onProgress){
+            this.props.onProgress(e)
+        }
     };
 
     setPaused=()=>{
