@@ -14,6 +14,11 @@ npm install react-native-video-bilibili
 ### UX exploded view
 <img src="https://github.com/1uokun/react-native-video-bilibili/blob/master/screenshot/ux.png" style="width:40%">
 
+### Preview
+|Expo SDK 50 | Web Online |
+|--|--|
+| [<img width="250" alt="expo-video-bilibili" src="https://github.com/1uokun/react-native-video-bilibili/assets/28673261/734bfe6f-28bd-4df5-9fd0-6a3b72b5c467" />](https://expo.dev/accounts/1uokun/projects/expo-video-bilibili) |https://1uokun.github.io/react-native-video-bilibili/index.html|
+
 ## Usage
 
 ```javascript
