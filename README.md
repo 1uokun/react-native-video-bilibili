@@ -107,6 +107,10 @@ import Video from 'react-native-video-bilibili';
 #### 1.0
 
  - [x] [Gesture Responder System][5]👆
+   - 左右滑动进度条
+   - 上下滑动亮度（左）/声音（右）
+   - 长按加速
+   - 双击暂停
  - [x] [Animated Component][6]🏄
  - [x] Menus Component
  - [x] Loading Component
@@ -119,11 +123,11 @@ import Video from 'react-native-video-bilibili';
  - [x] add `lock` props
  - [x] add `children` props
 
-#### 2.0 Future features
+#### 2.0 Future features(💰paid version)
 
- - [ ] Native volume control
- - [ ] Native light control
- - [ ] 弹幕
+ - [x] Native volume control
+ - [x] Native light control
+ - [x] 弹幕
 
 
 
