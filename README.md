@@ -114,9 +114,6 @@ import Video from 'react-native-video-bilibili';
  - [x] [Animated Component][6]🏄
  - [x] Menus Component
  - [x] Loading Component
- 
-> if you accept `Link` the other library,please refer to 
-> https://github.com/abbasfreestyle/react-native-af-video-player
 
 #### 1.1
 
